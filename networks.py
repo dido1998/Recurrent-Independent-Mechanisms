@@ -116,7 +116,7 @@ class MnistModel(nn.Module):
 	def to_device(self, x):
 		return torch.from_numpy(x).to(self.device)
 
-	def forward(self, x, y):
+	def forward(self, x, y = None):
 		x = x.float()
 		hs = [torch.randn(x.size(0), self.args['hidden_size']).to(self.device) for _ in range(self.args['num_units'])]
 		cs = None
@@ -132,7 +132,8 @@ class MnistModel(nn.Module):
 		if y is not None:
 			y = y.long()
 			loss = self.Loss(probs, y)
-		return probs, loss
+			return probs, loss
+		return probs
 
 
 	def update(self, loss):

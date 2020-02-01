@@ -64,7 +64,7 @@ class MnistData:
 		return self.train_data[i], self.train_labels[i]
 
 	def val_get(self, i):
-		self.val_data[i], self.val_labels[i]
+		return self.val_data[i], self.val_labels[i]
 
 
 

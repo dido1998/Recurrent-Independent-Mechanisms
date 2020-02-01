@@ -49,23 +49,21 @@ def test_model(model, loader):
 	accuracy = 0
 	loss = 0
 	with torch.no_grad():
-		for i in range(loader.val_len()):
+		for i in tqdm(range(loader.val_len())):
 			test_x, test_y = loader.val_get(i)
 			test_x = model.to_device(test_x)
-			test_y = model.to_device(test_y)
-			test_x.transpose_(0, 1)
+			test_y = model.to_device(test_y).long()
 			
 			
-			probs , l = model(test_x)
+			probs  = model(test_x)
 
-			loss += l.item()
+			#loss += l.item()
 			preds = torch.argmax(probs, dim=1)
 			correct = preds == test_y
 			accuracy += correct.sum().item()
 
 	accuracy /= 100.0
-	loss /= loader.val_len()
-	return loss, accuracy
+	return accuracy
 
 def train_model(model, epochs, data):
 	acc=[]
@@ -110,21 +108,19 @@ def train_model(model, epochs, data):
 			# writer.add_scalar('/hdetach:loss', loss_val, ctr)
 			ctr += 1
 
-		v_loss, v_accuracy = test_model(model, data)
+		v_accuracy = test_model(model, data)
 		if best_acc < v_accuracy:
 			best_acc = v_accuracy
 			print('best validation accuracy ' + str(best_acc))
 			print('Saving best model..')
 			state = {
-	        'net': model,
-	        'hid_size': hid_size,
+	        'net': model,	
 	        'epoch':epoch,
 	    	'ctr':ctr,
 	    	'best_acc':best_acc
 	    	}
 			with open(log_dir + '/best_model.pt', 'wb') as f:
 				torch.save(state, f)
-			_, test_acc = test_model(model, testloader, criterion, order)
 		print('epoch_loss: {}, val accuracy: {} '.format(epoch_loss/(iter_ctr), v_accuracy))
 		lossstats.append((ctr,epoch_loss/iter_ctr))
 		acc.append((epoch,v_accuracy))
