@@ -37,7 +37,7 @@ parser.add_argument('--k', type = int, default = 4)
 
 parser.add_argument('--size', type = int, default = 14)
 parser.add_argument('--loadsaved', type = int, default = 0)
-parser.add_argument('--log_dir'), type = str, default = 'models'
+parser.add_argument('--log_dir', type = str, default = 'models')
 
 args = vars(parser.parse_args())
 
