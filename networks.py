@@ -38,45 +38,33 @@ class RIM(nn.Module):
 	    #print(x.type())
 	    key_layer = self.key(x)
 	    value_layer = self.value(x)
-	    
+
+	    query_layer = [self.query[i](h) for i, h in enumerate(hs)]
+	    query_layer = torch.stack(query_layer, dim = 1)
+
 	    key_layer = self.transpose_for_scores(key_layer,  self.args['num_input_heads'], self.args['key_size_input'])
 	    value_layer = torch.mean(self.transpose_for_scores(value_layer,  self.args['num_input_heads'], self.args['value_size_input']), dim = 1)
+	    query_layer = self.transpose_for_scores(query_layer, self.args['num_input_heads'], self.args['query_size_input'])
 
-	    attention_scores = []
-	    attention_scores_ = []
-	    for i, h in enumerate(hs):
-	    	q = self.query[i](h.unsqueeze(1))
-	    	q = self.transpose_for_scores(q, self.args['num_input_heads'], self.args['query_size_input'])
-	    	a = torch.matmul(q, key_layer.transpose(-1, -2)) / math.sqrt(self.key_size)
-	    	attention_scores.append(torch.squeeze(torch.mean(a, dim = 1)))
-	    	attention_scores_.append(attention_scores[-1][:,0])
-
-
-	    null_scores = torch.zeros(self.num_units, x.size(0)).to(self.device)
-	    for i, a in enumerate(attention_scores_):
-	    	null_scores[i, :] = a
-	    null_scores = torch.transpose(null_scores, 0, 1)
-	    topk = torch.topk(null_scores, self.k, dim = 1)
-
-	    mask = torch.zeros(x.size(0), self.num_units).to(self.device)
+	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) / self.args['key_size_input']
+	    attention_scores = torch.mean(attention_scores, dim = 1)
+	    #mask = torch.zeros(attention_scores.size()).to(self.device) 
+	    mask_ = torch.zeros(x.size(0), self.args['num_units']).to(self.device)
 	    
-	    
-	    topk = topk.indices.view(-1)
-	 
-	    
-	    
-	    row_index = torch.tensor(row_index).long().to(self.device)
-	    mask[row_index, topk] = 1.0
-	    topk_ = torch.split(1 - mask, 1, 1)
-	    topk_ = [torch.split(t, 1, 0) for t in topk_]
-	    inputs = []
-	    for i in range(len(attention_scores)):
-	    	_mask = torch.zeros(attention_scores[i].size()).to(self.device)
-	    	_mask[ind, topk_[i]] = 1
-	    	attention_scores[i] = (attention_scores[i] * _mask).unsqueeze(1)
-	    	inputs.append(torch.matmul(self.input_dropout(nn.Softmax(dim=-1)(attention_scores[i])), value_layer).squeeze())
+	    not_null_scores = attention_scores[:,:, 0]
+	    #null_scores = -attention_scores[:,:,0]
+	    topk1 = torch.topk(not_null_scores,self.k,  dim = 1)
+	    #topk2 = torch.topk(null_scores, 6 - self.k, dim = 1)
+	    mask_[row_index, topk1.indices.view(-1)] = 1
+	    #mask[row_index, topk1.indices.view(-1), 0] = 1
+	    #mask[ind, topk2.indices.view(-1), 1] = 1
 
-	    return inputs, mask
+	    #attention_scores = attention_scores 
+	    attention_probs = self.input_dropout(nn.Softmax(dim = -1)(attention_scores))
+	    #print(value_layer)
+	    inputs = torch.matmul(attention_probs, value_layer) * mask_.unsqueeze(2)
+	    inputs = torch.split(inputs, 1, 1)
+	    return inputs, mask_
 
 	def communication_attention(self, hs, mask):
 	    query_layer = []
@@ -124,14 +112,18 @@ class RIM(nn.Module):
 		size = x.size() # (batch_size, num_elements, feature_size)
 		null_input = torch.zeros(size[0], 1, size[2]).float().to(self.device)
 		x = torch.cat((x, null_input), dim = 1)
-		x = torch.squeeze(x, dim = 1)
+		#x = torch.squeeze(x, dim = 1)
 		#mask = torch.ones(x.size(0), self.num_units).to(self.device)
 		inputs, mask = self.input_attention_mask(x, hs, row_index, ind)
 		for i in range(self.num_units):
 			if cs is None:
 				hs[i] = self.rnn[i](inputs[i], hs[i])
 			else:
-				hs[i], cs[i] = self.rnn[i](inputs[i], (hs[i], cs[i]))
+
+				hs[i], cs[i] = self.rnn[i](inputs[i].squeeze(), (hs[i], cs[i]))
+			mask_bool = (1 -mask[:, i]).view(-1).bool()
+			hs[i][mask_bool, :] = hs[i][mask_bool, :].detach()
+
 		hs = self.communication_attention(hs, mask)
 		return hs, cs
 
@@ -253,12 +245,12 @@ class CopyingModel(nn.Module):
 
 		self.Linear = nn.Linear(args['hidden_size'] * args['num_units'], 9)
 		self.Loss = nn.CrossEntropyLoss()
-		self.optimizer = torch.optim.Adam(self.parameters(), lr = 0.005)
+		#self.optimizer = torch.optim.Adam(self.parameters(), lr = 0.005)
 
 	def to_device(self, x):
 		return torch.from_numpy(x).to(self.device)
 
-	def forward(self, x, y = None):
+	def forward(self, row_index, ind, x, y = None):
 		x = x.float()
 		hs = [torch.randn(x.size(0), self.args['hidden_size']).to(self.device) for _ in range(self.args['num_units'])]
 		cs = None
@@ -270,7 +262,7 @@ class CopyingModel(nn.Module):
 		#xs = [torch.squeeze(k) for k in xs]
 		preds = []
 		for k in xs:
-			hs, cs = self.rim_model(k, hs, cs)
+			hs, cs = self.rim_model(row_index, ind, k, hs, cs)
 			h = torch.cat(hs, dim = 1)
 			preds.append(self.Linear(h))
 		preds = torch.stack(preds, dim = 1)
@@ -282,10 +274,4 @@ class CopyingModel(nn.Module):
 			loss = self.Loss(preds_, torch.squeeze(y))
 			return preds, loss
 		return preds
-
-
-	def update(self, loss):
-		self.zero_grad()
-		loss.backward()
-		self.optimizer.step()
 
