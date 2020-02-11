@@ -2,6 +2,34 @@ import torch
 import torch.nn as nn
 import math
 from lstm_cell import LSTM
+
+class blocked_grad(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, mask):
+        ctx.save_for_backward(x, mask)
+        return x
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, mask = ctx.saved_tensors
+        return grad_output * mask, mask * 0.0
+
+
+class GroupLinearLayer(nn.Module):
+    """Container module with an encoder, a recurrent module, and a decoder."""
+
+    def __init__(self, din, dout, num_blocks):
+        super(GroupLinearLayer, self).__init__()
+
+        self.w = nn.Parameter(0.01 * torch.randn(num_blocks,din,dout))
+
+    def forward(self,x):
+        x = x.permute(1,0,2)
+        x = torch.bmm(x,self.w)
+        return x.permute(1,0,2)
+
+
 class RIM(nn.Module):
 	def __init__(self, device, args):#num_units, hidden_size, rnn_cell, num_input_heads, num_comm_heads, query_size, key_size, value_size, k):
 		super().__init__()
@@ -17,14 +45,16 @@ class RIM(nn.Module):
 
 		if self.rnn_cell == 'GRU':
 			self.rnn = nn.ModuleList([nn.GRUCell(args['value_size_input'], args['hidden_size']) for _ in range(args['num_units'])])
-			self.query = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_input'] * args['num_input_heads']) for _ in range(args['num_units'])])
+			#self.query = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_input'] * args['num_input_heads']) for _ in range(args['num_units'])])
+			self.query = GroupLinearLayer(args['hidden_size'],  args['key_size_input'] * args['num_input_heads'], self.num_units)
 		else:
 			self.rnn = nn.ModuleList([nn.LSTMCell(args['value_size_input'], args['hidden_size']) for _ in range(args['num_units'])])
-			self.query = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_input'] * args['num_input_heads']) for _ in range(args['num_units'])])
-		self.query_ = nn.ModuleList([nn.Linear(args['hidden_size'], args['query_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
-		self.key_ = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
-		self.value_ = nn.ModuleList([nn.Linear(args['hidden_size'], args['value_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
-		self.comm_attention_output = nn.ModuleList([nn.Linear(args['num_comm_heads'] * args['value_size_comm'], args['value_size_comm']) for _ in range(args['num_units'])])
+			self.query = GroupLinearLayer(args['hidden_size'],  args['key_size_input'] * args['num_input_heads'], self.num_units)
+			#self.query = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_input'] * args['num_input_heads']) for _ in range(args['num_units'])])
+		self.query_ =GroupLinearLayer(args['hidden_size'], args['query_size_comm'] * args['num_comm_heads'], self.num_units) #nn.ModuleList([nn.Linear(args['hidden_size'], args['query_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
+		self.key_ = GroupLinearLayer(args['hidden_size'], args['key_size_comm'] * args['num_comm_heads'], self.num_units) # nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
+		self.value_ = GroupLinearLayer(args['hidden_size'], args['value_size_comm'] * args['num_comm_heads'], self.num_units) #nn.ModuleList([nn.Linear(args['hidden_size'], args['value_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
+		self.comm_attention_output = GroupLinearLayer(args['num_comm_heads'] * args['value_size_comm'], args['value_size_comm'], self.num_units)#nn.ModuleList([nn.Linear(args['num_comm_heads'] * args['value_size_comm'], args['value_size_comm']) for _ in range(args['num_units'])])
 		self.comm_dropout = nn.Dropout(p =0.1)
 		self.input_dropout = nn.Dropout(p =0.1)
 
@@ -34,13 +64,11 @@ class RIM(nn.Module):
 	    x = x.view(*new_x_shape)
 	    return x.permute(0, 2, 1, 3)
 
-	def input_attention_mask(self, x, hs, row_index, ind):
+	def input_attention_mask(self, x, h, row_index, ind):
 	    #print(x.type())
 	    key_layer = self.key(x)
 	    value_layer = self.value(x)
-
-	    query_layer = [self.query[i](h) for i, h in enumerate(hs)]
-	    query_layer = torch.stack(query_layer, dim = 1)
+	    query_layer = self.query(h)
 
 	    key_layer = self.transpose_for_scores(key_layer,  self.args['num_input_heads'], self.args['key_size_input'])
 	    value_layer = torch.mean(self.transpose_for_scores(value_layer,  self.args['num_input_heads'], self.args['value_size_input']), dim = 1)
@@ -66,17 +94,15 @@ class RIM(nn.Module):
 	    inputs = torch.split(inputs, 1, 1)
 	    return inputs, mask_
 
-	def communication_attention(self, hs, mask):
+	def communication_attention(self, h, mask):
 	    query_layer = []
 	    key_layer = []
 	    value_layer = []
-	    for i, h in enumerate(hs):
-	    	query_layer.append(self.query_[i](h) * mask[:, i].view(-1, 1))
-	    	key_layer.append(self.key_[i](h))
-	    	value_layer.append(self.value_[i](h))
-	    query_layer = torch.stack(query_layer, dim = 1)
-	    key_layer = torch.stack(key_layer, dim = 1)
-	    value_layer = torch.stack(value_layer, dim = 1)
+	    
+	    query_layer = self.query_(h)
+	    key_layer = self.key_(h)
+	    value_layer = self.value_(h)
+	    
 	    
 	    query_layer = self.transpose_for_scores(query_layer, self.args['num_comm_heads'], self.args['query_size_comm'])
 	    key_layer = self.transpose_for_scores(key_layer, self.args['num_comm_heads'], self.args['key_size_comm'])
@@ -93,19 +119,16 @@ class RIM(nn.Module):
 	    #attention_probs = attention_probs * mask.unsqueeze(2)
 	    mask = [mask for _ in range(attention_probs.size(1))]
 	    mask = torch.stack(mask, dim = 1)
-	    
 	    attention_probs = attention_probs * mask.unsqueeze(3)
 	    attention_probs = self.comm_dropout(attention_probs)
 	    context_layer = torch.matmul(attention_probs, value_layer)
 	    context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
 	    new_context_layer_shape = context_layer.size()[:-2] + (self.args['num_comm_heads'] * self.args['value_size_comm'],)
 	    context_layer = context_layer.view(*new_context_layer_shape)
+	    context_layer = self.comm_attention_output(context_layer)
+	    #context_layer = [self.comm_attention_output[i](c) for i, c in enumerate(context_layer)]
+	    context_layer = context_layer + h
 	    
-	    context_layer = torch.split(context_layer, 1, 1)
-	    context_layer = [self.comm_attention_output[i](c) for i, c in enumerate(context_layer)]
-
-	    context_layer = [torch.squeeze(c) + hs[i] for i, c in enumerate(context_layer)]
-
 	    return context_layer
 
 	def forward(self, row_index, ind, x, hs, cs = None):
@@ -115,16 +138,31 @@ class RIM(nn.Module):
 		#x = torch.squeeze(x, dim = 1)
 		#mask = torch.ones(x.size(0), self.num_units).to(self.device)
 		inputs, mask = self.input_attention_mask(x, hs, row_index, ind)
+		h_old = hs * 1.0
+		if cs is not None:
+			c_old = cs * 1.0
+		hs = list(torch.split(hs, 1,1))
+		if cs is not None:
+			cs = list(torch.split(cs, 1,1))
 		for i in range(self.num_units):
 			if cs is None:
-				hs[i] = self.rnn[i](inputs[i], hs[i])
+				hs[:, i, :] = self.rnn[i](inputs[i], hs[:, i, :])
 			else:
+				
+				hs[i], cs[i] = self.rnn[i](inputs[i].squeeze(), (hs[i].squeeze(), cs[i].squeeze()))
+		hs = torch.stack(hs, dim = 1)
+		if cs is not None:
+			cs = torch.stack(cs, dim = 1)
+		
+		mask = mask.unsqueeze(2)
+		h_new = blocked_grad.apply(hs, mask)
 
-				hs[i], cs[i] = self.rnn[i](inputs[i].squeeze(), (hs[i], cs[i]))
-			mask_bool = (1 -mask[:, i]).view(-1).bool()
-			hs[i][mask_bool, :] = hs[i][mask_bool, :].detach()
 
-		hs = self.communication_attention(hs, mask)
+		h_new = self.communication_attention(h_new, mask.squeeze())
+
+		hs = mask * h_new + (1 - mask) * h_old 
+		cs = mask * cs + (1 - mask) * c_old
+
 		return hs, cs
 
 
@@ -148,17 +186,16 @@ class MnistModel(nn.Module):
 
 	def forward(self, row_index, ind, x, y = None):
 		x = x.float()
-		hs = [torch.randn(x.size(0), self.args['hidden_size']).to(self.device) for _ in range(self.args['num_units'])]
+		hs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		cs = None
 		if self.args['rnn_cell'] == 'LSTM':
-			cs = [torch.randn(x.size(0), self.args['hidden_size']).to(self.device) for _ in range(self.args['num_units'])]
+			cs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		xs = torch.split(x, 1, 1)
 		#print(xs[0].size())
 		#xs = [torch.squeeze(k) for k in xs]
 		for x in xs:
 			hs, cs = self.rim_model(row_index, ind, x, hs, cs)
-		h = torch.cat(hs, dim = 1)
-		preds = self.Linear(h)
+		preds = self.Linear(hs.contiguous().view(x.size(0), -1))
 		if y is not None:
 			y = y.long()
 			probs = nn.Softmax(dim = -1)(preds)
@@ -252,26 +289,26 @@ class CopyingModel(nn.Module):
 
 	def forward(self, row_index, ind, x, y = None):
 		x = x.float()
-		hs = [torch.randn(x.size(0), self.args['hidden_size']).to(self.device) for _ in range(self.args['num_units'])]
+		hs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		cs = None
 		if self.args['rnn_cell'] == 'LSTM':
-			cs = [torch.randn(x.size(0), self.args['hidden_size']).to(self.device) for _ in range(self.args['num_units'])]
+			cs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 
 		xs = torch.split(x, 1, 1)
 		#print(xs[0].size())
 		#xs = [torch.squeeze(k) for k in xs]
-		preds = []
-		for k in xs:
+		preds_ = []
+		loss = 0
+		for i,k in enumerate(xs):
 			hs, cs = self.rim_model(row_index, ind, k, hs, cs)
-			h = torch.cat(hs, dim = 1)
-			preds.append(self.Linear(h))
-		preds = torch.stack(preds, dim = 1)
+			
+			preds = self.Linear(hs.contiguous().view(x.size(0), -1))
+			preds_.append(preds)
+			if y is not None:
+				loss+=self.Loss(preds, y[:,i].squeeze().long())
+		preds_ = torch.stack(preds_, dim = 1)
 		if y is not None:
-			preds_ = torch.transpose(preds, 1, 2)
-			#print(preds.size())
-
-			y = y.long()
-			loss = self.Loss(preds_, torch.squeeze(y))
-			return preds, loss
-		return preds
+			loss/=len(xs)
+			return preds_, loss
+		return preds_
 
