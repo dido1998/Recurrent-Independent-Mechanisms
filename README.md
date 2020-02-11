@@ -1,3 +1,11 @@
 # Recurrent-Independent-Mechanisms
 
-This repo is still under construction
+Results for MNIST task:
+
+|      | Kt | Ka | h   | 16*16 | 19*19 | 24*24 |
+|------|----|----|-----|-------|-------|-------|
+| RIM  | 6  | 5  | 600 | 88.67 | 59.32 | 28.85 |
+|      | 6  | 4  | 600 | 87.89 | 69.75 | 46.23 |
+|      |    |    |     |       |       |       |
+| LSTM | -  | -  | 600 | 80.43 | 39.74 | 20.48 |
+
