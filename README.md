@@ -1,6 +1,6 @@
 # Recurrent-Independent-Mechanisms
 
-An implementation of Recurrent Independent Mechanisms (Goyal et al. 2019) in PyTorch.
+An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](https://arxiv.org/pdf/1909.10893.pdf) in PyTorch.
 
 ## Requirements
 ```
