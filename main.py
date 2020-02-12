@@ -22,24 +22,24 @@ parser.add_argument('--epochs', type = int, default = 200)
 parser.add_argument('--batch_size', type = int, default = 256)
 parser.add_argument('--hidden_size', type = int, default = 100)
 parser.add_argument('--input_size', type = int, default = 1)
-parser.add_argument('--model', type = str, default = 'RIM')
+parser.add_argument('--model', type = str, default = 'LSTM')
 parser.add_argument('--train', type = str2bool, default = True)
 parser.add_argument('--num_units', type = int, default = 6)
 parser.add_argument('--rnn_cell', type = str, default = 'LSTM')
 parser.add_argument('--key_size_input', type = int, default = 64)
-parser.add_argument('--value_size_input', type = int, default = 128 )
+parser.add_argument('--value_size_input', type = int, default =  400)
 parser.add_argument('--query_size_input', type = int, default = 64)
 parser.add_argument('--num_input_heads', type = int, default = 1)
 parser.add_argument('--num_comm_heads', type = int, default = 4)
 
-parser.add_argument('--key_size_comm', type = int, default = 64)
+parser.add_argument('--key_size_comm', type = int, default = 32)
 parser.add_argument('--value_size_comm', type = int, default = 100)
-parser.add_argument('--query_size_comm', type = int, default = 64)
+parser.add_argument('--query_size_comm', type = int, default = 32)
 parser.add_argument('--k', type = int, default = 4)
 
 parser.add_argument('--size', type = int, default = 14)
 parser.add_argument('--loadsaved', type = int, default = 0)
-parser.add_argument('--log_dir', type = str, default = 'smnist_rim_100')
+parser.add_argument('--log_dir', type = str, default = 'smnist_lstm_600')
 
 args = vars(parser.parse_args())
 
@@ -55,23 +55,19 @@ else:
 
 
 
-def test_model(model, loader):
+def test_model(model, loader, func):
 	
 	accuracy = 0
 	loss = 0
 	model.eval()
 	with torch.no_grad():
 		for i in tqdm(range(loader.val_len())):
-			test_x, test_y, row_index, ind = loader.val_get(i)
+			test_x, test_y = func(i)
 			test_x = model.to_device(test_x)
 			test_y = model.to_device(test_y).long()
 			
-			if args['model'] == 'LSTM':
-				probs  = model(test_x)
-			else:
-				probs  = model(row_index, ind, test_x)
+			probs  = model( test_x)
 
-			#loss += l.item()
 			preds = torch.argmax(probs, dim=1)
 			correct = preds == test_y
 			accuracy += correct.sum().item()
@@ -101,7 +97,7 @@ def train_model(model, epochs, data):
 		ctr=len(losslist)-1
 		saved = torch.load(log_dir + '/best_model.pt')
 		model.load_state_dict(saved['net'])
-	optimizer = torch.optim.Adam(model.parameters(), lr = 0.0001)
+	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
 		
 	for epoch in range(start_epoch,epochs):
 		
@@ -113,49 +109,41 @@ def train_model(model, epochs, data):
 		model.train()
 		for i in tqdm(range(data.train_len())):
 			iter_ctr+=1.
-			inp_x, inp_y, row_index, ind = data.train_get(i)
+			inp_x, inp_y = data.train_get(i)
 			inp_x = model.to_device(inp_x)
 			inp_y = model.to_device(inp_y)
 			
+			output, l = model(inp_x, inp_y)
 			
-			
-			if args['model'] == 'LSTM':
-				output, l = model(inp_x, inp_y)	
-			else:
-				output, l = model(row_index, ind, inp_x, inp_y)
-			#print('-------------------------')
-			#print(output)
 			optimizer.zero_grad()
 			l.backward()
 			optimizer.step()
 			norm += model.grad_norm()
 			epoch_loss += l.item()
 			preds = torch.argmax(output, dim=1)
-			#print(preds)
-			#print(inp_y)
+			
 			correct = preds == inp_y.long()
 			t_accuracy += correct.sum().item()
 
-			# print(z, loss_val)
-			# writer.add_scalar('/hdetach:loss', loss_val, ctr)
 			ctr += 1
 
-		v_accuracy = test_model(model, data)
-		if best_acc < v_accuracy:
-			best_acc = v_accuracy
-			print('best validation accuracy ' + str(best_acc))
-			print('Saving best model..')
-			state = {
-	        'net': model.state_dict(),	
-	        'epoch':epoch,
-	    	'ctr':ctr,
-	    	'best_acc':best_acc
-	    	}
-			with open(log_dir + '/best_model.pt', 'wb') as f:
-				torch.save(state, f)
-		print('epoch_loss: {}, val accuracy: {}, train_acc: {}, grad_norm: {} '.format(epoch_loss/(iter_ctr), v_accuracy, t_accuracy / 600, norm/iter_ctr))
+		v_accuracy1 = test_model(model, data, data.val_get1)
+		v_accuracy2 = test_model(model, data, data.val_get2)
+		v_accuracy3 = test_model(model, data, data.val_get3)
+		
+		print('best validation accuracy ' + str(best_acc))
+		print('Saving best model..')
+		state = {
+	       'net': model.state_dict(),	
+	       'epoch':epoch,
+	    'ctr':ctr,
+	    'best_acc':best_acc
+	    }
+		with open(log_dir + '/best_model.pt', 'wb') as f:
+			torch.save(state, f)
+		print('epoch_loss: {}, val accuracy1: {}, val_accuracy2:{}, val_accuracy3:{}, train_acc: {}, grad_norm: {} '.format(epoch_loss/(iter_ctr), v_accuracy1, v_accuracy2, v_accuracy3, t_accuracy / 600, norm/iter_ctr))
 		lossstats.append((ctr,epoch_loss/iter_ctr))
-		acc.append((epoch,v_accuracy))
+		acc.append((epoch,(v_accuracy1, v_accuracy2, v_accuracy3)))
 		with open(log_dir+'/lossstats.pickle','wb') as f:
 			pickle.dump(lossstats,f)
 		with open(log_dir+'/accstats.pickle','wb') as f:

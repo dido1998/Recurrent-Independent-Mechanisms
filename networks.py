@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from lstm_cell import LSTM
+import numpy as np
 
 class blocked_grad(torch.autograd.Function):
 
@@ -64,7 +65,7 @@ class RIM(nn.Module):
 	    x = x.view(*new_x_shape)
 	    return x.permute(0, 2, 1, 3)
 
-	def input_attention_mask(self, x, h, row_index, ind):
+	def input_attention_mask(self, x, h):
 	    #print(x.type())
 	    key_layer = self.key(x)
 	    value_layer = self.value(x)
@@ -76,20 +77,16 @@ class RIM(nn.Module):
 
 	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) / self.args['key_size_input']
 	    attention_scores = torch.mean(attention_scores, dim = 1)
-	    #mask = torch.zeros(attention_scores.size()).to(self.device) 
 	    mask_ = torch.zeros(x.size(0), self.args['num_units']).to(self.device)
 	    
 	    not_null_scores = attention_scores[:,:, 0]
-	    #null_scores = -attention_scores[:,:,0]
 	    topk1 = torch.topk(not_null_scores,self.k,  dim = 1)
-	    #topk2 = torch.topk(null_scores, 6 - self.k, dim = 1)
-	    mask_[row_index, topk1.indices.view(-1)] = 1
-	    #mask[row_index, topk1.indices.view(-1), 0] = 1
-	    #mask[ind, topk2.indices.view(-1), 1] = 1
+	    row_index = np.arange(x.size(0))
+	    row_index = np.repeat(x.size(0))
 
-	    #attention_scores = attention_scores 
+	    mask_[row_index, topk1.indices.view(-1)] = 1
+	    
 	    attention_probs = self.input_dropout(nn.Softmax(dim = -1)(attention_scores))
-	    #print(value_layer)
 	    inputs = torch.matmul(attention_probs, value_layer) * mask_.unsqueeze(2)
 	    inputs = torch.split(inputs, 1, 1)
 	    return inputs, mask_
@@ -109,14 +106,9 @@ class RIM(nn.Module):
 	    value_layer = self.transpose_for_scores(value_layer, self.args['num_comm_heads'], self.args['value_size_comm'])
 	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
 	    attention_scores = attention_scores / math.sqrt(self.args['key_size_comm'])
-	    #attention_scores = torch.mean(attention_scores, dim = 1)
 	    
 	    attention_probs = nn.Softmax(dim=-1)(attention_scores)
-	    #print(attention_probs.size())
-	    #print(mask.unsqueeze(2).size())
-	    #attention_probs = attention_probs * mask_
-
-	    #attention_probs = attention_probs * mask.unsqueeze(2)
+	    
 	    mask = [mask for _ in range(attention_probs.size(1))]
 	    mask = torch.stack(mask, dim = 1)
 	    attention_probs = attention_probs * mask.unsqueeze(3)
@@ -131,13 +123,13 @@ class RIM(nn.Module):
 	    
 	    return context_layer
 
-	def forward(self, row_index, ind, x, hs, cs = None):
+	def forward(self, x, hs, cs = None):
 		size = x.size() # (batch_size, num_elements, feature_size)
 		null_input = torch.zeros(size[0], 1, size[2]).float().to(self.device)
 		x = torch.cat((x, null_input), dim = 1)
 		#x = torch.squeeze(x, dim = 1)
 		#mask = torch.ones(x.size(0), self.num_units).to(self.device)
-		inputs, mask = self.input_attention_mask(x, hs, row_index, ind)
+		inputs, mask = self.input_attention_mask(x, hs)
 		h_old = hs * 1.0
 		if cs is not None:
 			c_old = cs * 1.0
@@ -184,17 +176,15 @@ class MnistModel(nn.Module):
 	def to_device(self, x):
 		return torch.from_numpy(x).to(self.device)
 
-	def forward(self, row_index, ind, x, y = None):
+	def forward(self, x, y = None):
 		x = x.float()
 		hs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		cs = None
 		if self.args['rnn_cell'] == 'LSTM':
 			cs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		xs = torch.split(x, 1, 1)
-		#print(xs[0].size())
-		#xs = [torch.squeeze(k) for k in xs]
 		for x in xs:
-			hs, cs = self.rim_model(row_index, ind, x, hs, cs)
+			hs, cs = self.rim_model(x, hs, cs)
 		preds = self.Linear(hs.contiguous().view(x.size(0), -1))
 		if y is not None:
 			y = y.long()
@@ -205,10 +195,6 @@ class MnistModel(nn.Module):
 		return preds
 
 
-	def update(self, loss):
-		self.zero_grad()
-		loss.backward()
-		self.optimizer.step()
 	def grad_norm(self):
 	    total_norm = 0
 	    for p in self.parameters():
@@ -255,10 +241,7 @@ class LSTM(nn.Module):
 			return probs, loss
 		return preds
 
-	def update(self, loss):
-		self.zero_grad()
-		loss.backward()
-		self.optimizer.step()
+	
 	def grad_norm(self):
 	    total_norm = 0
 	    for p in self.parameters():
@@ -282,12 +265,11 @@ class CopyingModel(nn.Module):
 
 		self.Linear = nn.Linear(args['hidden_size'] * args['num_units'], 9)
 		self.Loss = nn.CrossEntropyLoss()
-		#self.optimizer = torch.optim.Adam(self.parameters(), lr = 0.005)
-
+		
 	def to_device(self, x):
 		return torch.from_numpy(x).to(self.device)
 
-	def forward(self, row_index, ind, x, y = None):
+	def forward(self, x, y = None):
 		x = x.float()
 		hs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		cs = None
@@ -295,20 +277,22 @@ class CopyingModel(nn.Module):
 			cs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 
 		xs = torch.split(x, 1, 1)
-		#print(xs[0].size())
-		#xs = [torch.squeeze(k) for k in xs]
 		preds_ = []
 		loss = 0
+		loss_last_10 = 0
 		for i,k in enumerate(xs):
-			hs, cs = self.rim_model(row_index, ind, k, hs, cs)
+			hs, cs = self.rim_model(k, hs, cs)
 			
 			preds = self.Linear(hs.contiguous().view(x.size(0), -1))
 			preds_.append(preds)
 			if y is not None:
 				loss+=self.Loss(preds, y[:,i].squeeze().long())
+				if i >= len(xs) - 10:
+					loss_last_10+=self.Loss(preds, y[:,i].squeeze().long())
 		preds_ = torch.stack(preds_, dim = 1)
 		if y is not None:
 			loss/=len(xs)
-			return preds_, loss
+			loss_last_10/=10
+			return preds_, loss, loss_last_10
 		return preds_
 
