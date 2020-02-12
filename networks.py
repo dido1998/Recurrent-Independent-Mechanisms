@@ -93,7 +93,7 @@ class RIM(nn.Module):
 	    not_null_scores = attention_scores[:,:, 0]
 	    topk1 = torch.topk(not_null_scores,self.k,  dim = 1)
 	    row_index = np.arange(x.size(0))
-	    row_index = np.repeat(x.size(0))
+	    row_index = np.repeat(row_index, self.k)
 
 	    mask_[row_index, topk1.indices.view(-1)] = 1
 	    

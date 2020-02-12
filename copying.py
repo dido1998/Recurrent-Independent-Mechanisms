@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--cuda', type = str2bool, default = True, help = 'use gpu or not')
 parser.add_argument('--epochs', type = int, default = 200)
 
-parser.add_argument('--batch_size', type = int, default = 64)
+parser.add_argument('--batch_size', type = int, default = 500)
 parser.add_argument('--hidden_size', type = int, default = 100)
 parser.add_argument('--input_size', type = int, default = 1)
 parser.add_argument('--T', type=int, default=50, help='T')
@@ -52,8 +52,8 @@ log_dir = args['log_dir']
 
 inp_size = 1
 out_size = 9
-train_size = 12800
-test_size = 12800
+train_size = 100000
+test_size = 2000
 
 def create_dataset(size, T):
 	d_x = []
@@ -69,11 +69,7 @@ def create_dataset(size, T):
 	return d_x, d_y
 
 
-row_index = []
-ind_ = []
-for k in range(args['batch_size']):
-	row_index.extend([k] * args['k'])
-	ind_.extend([k] * (args['num_units'] - args['k']))
+
 
 
 def test_model(model, test_x, test_y):
@@ -90,7 +86,7 @@ def test_model(model, test_x, test_y):
 			inp_x, inp_y = test_x[ind], test_y[ind]
 			
 			with torch.no_grad():
-				output, _, l = model(row_index, ind_, inp_x, inp_y)
+				output, _, l = model(inp_x, inp_y)
 				loss+=l.item()
 
 				output = torch.argmax(output, dim = 2)
@@ -102,8 +98,8 @@ def test_model(model, test_x, test_y):
 				correct = output == inp_y
 				accuracy += correct.sum().item()
 
-	accuracy /= (1280.0)
-	loss/=200
+	accuracy /= (200.0)
+	loss/=4
 
 	print('validation accuracy {} loss: {}'.format(accuracy, loss))
 	return loss, accuracy
@@ -157,7 +153,7 @@ def train_model(model, epochs, state = None):
 			#print(inp_x.size())
 			#print(inp_y.size())
 			
-			output, l, l1= model(row_index, ind_, inp_x, inp_y)
+			output, l, l1= model(inp_x, inp_y)
 			optimizer.zero_grad()
 			l.backward()
 			torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
