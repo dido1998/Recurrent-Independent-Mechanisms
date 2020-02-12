@@ -56,17 +56,22 @@ python3.6 main.py --args
 ```
 from networks import RIM
 timesteps = 50
-# The definition of each argument is same as above
+
+# Model definition. The definition of each argument is same as above.
 rim_model = RIM(torch.device(<device>), input_size, hidden_size, rnn_cell, key_size_input,
 value_size_input, query_size_input, num_input_heads, input_dropout, key_size_comm, value_size_comm,
 query_size_comm, num_comm_heads, comm_dropout, k)
 
+# creating hidden states and cell states
 hs = torch.randn(batch_size, num_units, hidden_size)
 cs = None
 if rnn_cell == 'LSTM':
   cs = torch.randn(batch_size, num_units, hidden_size)
+  
 xs = torch.randn(batch_size, timesteps, input_size)
+# creating input
 xs = torch.split(xs, 1, 1)
+
 for x in xs:
     hs, cs = rim_model(x, hs, cs)
 ```
