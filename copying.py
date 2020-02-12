@@ -32,6 +32,9 @@ parser.add_argument('--value_size_input', type = int, default = 400 )
 parser.add_argument('--query_size_input', type = int, default = 64)
 parser.add_argument('--num_input_heads', type = int, default = 1)
 parser.add_argument('--num_comm_heads', type = int, default = 4)
+parser.add_argument('--input_dropout', type = float, default = 0.1)
+parser.add_argument('--comm_dropout', type = float, default = 0.1)
+
 
 parser.add_argument('--key_size_comm', type = int, default = 32)
 parser.add_argument('--value_size_comm', type = int, default = 100 )

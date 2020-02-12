@@ -32,32 +32,43 @@ class GroupLinearLayer(nn.Module):
 
 
 class RIM(nn.Module):
-	def __init__(self, device, args):#num_units, hidden_size, rnn_cell, num_input_heads, num_comm_heads, query_size, key_size, value_size, k):
+	def __init__(self, 
+		device, input_size, hidden_size, num_units, rnn_cell, input_key_size, input_value_size, input_query_size,
+		num_input_heads, input_dropout, comm_key_size, comm_value_size, comm_query_size, num_comm_heads, comm_dropout,
+		k 
+	):#num_units, hidden_size, rnn_cell, num_input_heads, num_comm_heads, query_size, key_size, value_size, k):
 		super().__init__()
 		self.device = device
-		self.hidden_size = args['hidden_size']
-		self.num_units = args['num_units']
-		self.rnn_cell = args['rnn_cell']
-		self.key_size = args['key_size_input']
-		self.args = args
-		self.k = args['k']
-		self.key = nn.Linear(args['input_size'], args['num_input_heads'] * args['query_size_input']).to(self.device)
-		self.value = nn.Linear(args['input_size'], args['num_input_heads'] * args['value_size_input']).to(self.device)
+		self.hidden_size = hidden_size
+		self.num_units =num_units
+		self.rnn_cell = rnn_cell
+		self.key_size = input_key_size
+		self.k = k
+		self.num_input_heads = num_input_heads
+		self.num_comm_heads = num_comm_heads
+		self.input_key_size = input_key_size
+		self.input_query_size = input_query_size
+		self.input_value_size = input_value_size
+
+		self.comm_key_size = comm_key_size
+		self.comm_query_size = comm_query_size
+		self.comm_value_size = comm_value_size
+
+		self.key = nn.Linear(input_size, num_input_heads * input_query_size).to(self.device)
+		self.value = nn.Linear(input_size, num_input_heads * input_value_size).to(self.device)
 
 		if self.rnn_cell == 'GRU':
-			self.rnn = nn.ModuleList([nn.GRUCell(args['value_size_input'], args['hidden_size']) for _ in range(args['num_units'])])
-			#self.query = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_input'] * args['num_input_heads']) for _ in range(args['num_units'])])
-			self.query = GroupLinearLayer(args['hidden_size'],  args['key_size_input'] * args['num_input_heads'], self.num_units)
+			self.rnn = nn.ModuleList([nn.GRUCell(input_value_size, hidden_size) for _ in range(num_units)])
+			self.query = GroupLinearLayer(hidden_size,  input_key_size * num_input_heads, self.num_units)
 		else:
-			self.rnn = nn.ModuleList([nn.LSTMCell(args['value_size_input'], args['hidden_size']) for _ in range(args['num_units'])])
-			self.query = GroupLinearLayer(args['hidden_size'],  args['key_size_input'] * args['num_input_heads'], self.num_units)
-			#self.query = nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_input'] * args['num_input_heads']) for _ in range(args['num_units'])])
-		self.query_ =GroupLinearLayer(args['hidden_size'], args['query_size_comm'] * args['num_comm_heads'], self.num_units) #nn.ModuleList([nn.Linear(args['hidden_size'], args['query_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
-		self.key_ = GroupLinearLayer(args['hidden_size'], args['key_size_comm'] * args['num_comm_heads'], self.num_units) # nn.ModuleList([nn.Linear(args['hidden_size'], args['key_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
-		self.value_ = GroupLinearLayer(args['hidden_size'], args['value_size_comm'] * args['num_comm_heads'], self.num_units) #nn.ModuleList([nn.Linear(args['hidden_size'], args['value_size_comm'] * args['num_comm_heads']) for _ in range(args['num_units'])])
-		self.comm_attention_output = GroupLinearLayer(args['num_comm_heads'] * args['value_size_comm'], args['value_size_comm'], self.num_units)#nn.ModuleList([nn.Linear(args['num_comm_heads'] * args['value_size_comm'], args['value_size_comm']) for _ in range(args['num_units'])])
-		self.comm_dropout = nn.Dropout(p =0.1)
-		self.input_dropout = nn.Dropout(p =0.1)
+			self.rnn = nn.ModuleList([nn.LSTMCell(input_value_size, hidden_size) for _ in range(num_units)])
+			self.query = GroupLinearLayer(hidden_size,  input_key_size * num_input_heads, self.num_units)
+		self.query_ =GroupLinearLayer(hidden_size, comm_query_size * num_comm_heads, self.num_units) 
+		self.key_ = GroupLinearLayer(hidden_size, comm_key_size * num_comm_heads, self.num_units)
+		self.value_ = GroupLinearLayer(hidden_size, comm_value_size * num_comm_heads, self.num_units)
+		self.comm_attention_output = GroupLinearLayer(num_comm_heads * comm_value_size, comm_value_size, self.num_units)
+		self.comm_dropout = nn.Dropout(p =input_dropout)
+		self.input_dropout = nn.Dropout(p =comm_dropout)
 
 
 	def transpose_for_scores(self, x, num_attention_heads, attention_head_size):
@@ -71,13 +82,13 @@ class RIM(nn.Module):
 	    value_layer = self.value(x)
 	    query_layer = self.query(h)
 
-	    key_layer = self.transpose_for_scores(key_layer,  self.args['num_input_heads'], self.args['key_size_input'])
-	    value_layer = torch.mean(self.transpose_for_scores(value_layer,  self.args['num_input_heads'], self.args['value_size_input']), dim = 1)
-	    query_layer = self.transpose_for_scores(query_layer, self.args['num_input_heads'], self.args['query_size_input'])
+	    key_layer = self.transpose_for_scores(key_layer,  self.num_input_heads, self.input_key_size)
+	    value_layer = torch.mean(self.transpose_for_scores(value_layer,  self.num_input_heads, self.input_value_size), dim = 1)
+	    query_layer = self.transpose_for_scores(query_layer, self.num_input_heads, self.input_query_size)
 
-	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) / self.args['key_size_input']
+	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) / math.sqrt(self.input_key_size) 
 	    attention_scores = torch.mean(attention_scores, dim = 1)
-	    mask_ = torch.zeros(x.size(0), self.args['num_units']).to(self.device)
+	    mask_ = torch.zeros(x.size(0), self.num_units).to(self.device)
 	    
 	    not_null_scores = attention_scores[:,:, 0]
 	    topk1 = torch.topk(not_null_scores,self.k,  dim = 1)
@@ -101,11 +112,11 @@ class RIM(nn.Module):
 	    value_layer = self.value_(h)
 	    
 	    
-	    query_layer = self.transpose_for_scores(query_layer, self.args['num_comm_heads'], self.args['query_size_comm'])
-	    key_layer = self.transpose_for_scores(key_layer, self.args['num_comm_heads'], self.args['key_size_comm'])
-	    value_layer = self.transpose_for_scores(value_layer, self.args['num_comm_heads'], self.args['value_size_comm'])
+	    query_layer = self.transpose_for_scores(query_layer, self.num_comm_heads, self.comm_query_size)
+	    key_layer = self.transpose_for_scores(key_layer, self.num_comm_heads, self.comm_key_size)
+	    value_layer = self.transpose_for_scores(value_layer, self.num_comm_heads, self.comm_value_size)
 	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
-	    attention_scores = attention_scores / math.sqrt(self.args['key_size_comm'])
+	    attention_scores = attention_scores / math.sqrt(self.comm_key_size)
 	    
 	    attention_probs = nn.Softmax(dim=-1)(attention_scores)
 	    
@@ -115,10 +126,9 @@ class RIM(nn.Module):
 	    attention_probs = self.comm_dropout(attention_probs)
 	    context_layer = torch.matmul(attention_probs, value_layer)
 	    context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
-	    new_context_layer_shape = context_layer.size()[:-2] + (self.args['num_comm_heads'] * self.args['value_size_comm'],)
+	    new_context_layer_shape = context_layer.size()[:-2] + (self.num_comm_heads * self.comm_value_size,)
 	    context_layer = context_layer.view(*new_context_layer_shape)
 	    context_layer = self.comm_attention_output(context_layer)
-	    #context_layer = [self.comm_attention_output[i](c) for i, c in enumerate(context_layer)]
 	    context_layer = context_layer + h
 	    
 	    return context_layer
@@ -127,8 +137,7 @@ class RIM(nn.Module):
 		size = x.size() # (batch_size, num_elements, feature_size)
 		null_input = torch.zeros(size[0], 1, size[2]).float().to(self.device)
 		x = torch.cat((x, null_input), dim = 1)
-		#x = torch.squeeze(x, dim = 1)
-		#mask = torch.ones(x.size(0), self.num_units).to(self.device)
+		
 		inputs, mask = self.input_attention_mask(x, hs)
 		h_old = hs * 1.0
 		if cs is not None:
@@ -168,7 +177,8 @@ class MnistModel(nn.Module):
 			self.device = torch.device('cuda')
 		else:
 			self.device = torch.device('cpu')
-		self.rim_model = RIM(self.device, args).to(self.device)
+		self.rim_model = RIM(self.device, args['input_size'], args['hidden_size'], args['num_units'], args['rnn_cell'], args['key_size_input'], args['value_size_input'] , args['query_size_input'],
+			args['num_input_heads'], args['input_dropout'], args['key_size_comm'], args['value_size_comm'], args['query_size_comm'], args['num_input_heads'], args['comm_dropout'], args['k']).to(self.device)
 
 		self.Linear = nn.Linear(args['hidden_size'] * args['num_units'], 10)
 		self.Loss = nn.CrossEntropyLoss()
@@ -261,7 +271,8 @@ class CopyingModel(nn.Module):
 			self.device = torch.device('cuda')
 		else:
 			self.device = torch.device('cpu')
-		self.rim_model = RIM(self.device, args).to(self.device)
+		self.rim_model = RIM(self.device, args['input_size'], args['hidden_size'], args['num_units'], args['rnn_cell'], args['key_size_input'], args['value_size_input'] , args['query_size_input'],
+			args['num_input_heads'], args['input_dropout'], args['key_size_comm'], args['value_size_comm'], args['query_size_comm'], args['num_input_heads'], args['comm_dropout'], args['k']).to(self.device)
 
 		self.Linear = nn.Linear(args['hidden_size'] * args['num_units'], 9)
 		self.Loss = nn.CrossEntropyLoss()
