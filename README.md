@@ -67,9 +67,9 @@ hs = torch.randn(batch_size, num_units, hidden_size)
 cs = None
 if rnn_cell == 'LSTM':
   cs = torch.randn(batch_size, num_units, hidden_size)
-  
+ 
+#Creating Input
 xs = torch.randn(batch_size, timesteps, input_size)
-# creating input
 xs = torch.split(xs, 1, 1)
 
 for x in xs:
