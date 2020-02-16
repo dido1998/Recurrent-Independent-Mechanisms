@@ -94,7 +94,7 @@ for x in xs:
 ```
 
 ## Gym Minigrid
-Results for the gym minigrd environment solved using **PPO**. 
+The minigrid environment is available [here](https://github.com/maximecb/gym-minigrid). Results for the gym minigrd environment solved using **PPO**. 
 
 **I report the mean return per episode in each case**
 
@@ -107,10 +107,6 @@ Results for the gym minigrd environment solved using **PPO**.
 | ----- | --------------------------- | --------------------------- | ------------------------ |
 | RIM (Kt = 4, Ka = 3) | 0.81 | 0.66 | 0.05 |
 | LSTM | 0.82 | 0.04 | 0.00 |
-
-
-
-
 
 ## Sequential MNIST Task
 Results for MNIST task:
