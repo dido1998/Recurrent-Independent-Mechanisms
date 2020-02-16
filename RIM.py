@@ -36,7 +36,7 @@ class RIMCell(nn.Module):
 	def __init__(self, 
 		device, input_size, hidden_size, num_units, rnn_cell, input_key_size = 64, input_value_size = 400, input_query_size = 64,
 		num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100, comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1,
-		k = 3 
+		k = 4
 	):#num_units, hidden_size, rnn_cell, num_input_heads, num_comm_heads, query_size, key_size, value_size, k):
 		super().__init__()
 		self.device = device
@@ -163,7 +163,9 @@ class RIMCell(nn.Module):
 
 		h_new = self.communication_attention(h_new, mask.squeeze(2))
 
-		hs = mask * h_new + (1 - mask) * h_old 
-		cs = mask * cs + (1 - mask) * c_old
+		hs = mask * h_new + (1 - mask) * h_old
+		if cs is not None:
+			cs = mask * cs + (1 - mask) * c_old
+			return hs, cs
 
-		return hs, cs
+		return hs
