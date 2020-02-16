@@ -66,6 +66,7 @@ For description of the RIMCell please check the paper.
 
 ### Outputs 
 | Output | Description |
+| ------ | ----------- |
 | **hs** | The new hidden state of shape (*batch_size, num_units, hidden_size*). |
 | **cs** | This is only returned if *rnn_cell = 'LSTM'*. The new cell state of shape (*batch_size, num_units, hidden_size*). |
 
