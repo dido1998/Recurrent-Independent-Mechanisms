@@ -40,7 +40,7 @@ For description of the RIMCell please check the paper.
 ### Parameters
 | Parameter | Description |
 | --------- | ----------- |
-| **device** | torch.device('cuda') or torch.device('cpu') |
+| **device** | `torch.device('cuda')` or `torch.device('cpu')`. |
 | **input_size** | The number of expected input features. |
 | **hidden_size** | The number of hidden features. |
 | **num_units** | Number of total RIM units. |
