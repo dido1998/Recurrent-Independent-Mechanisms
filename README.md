@@ -144,7 +144,7 @@ Results for the gym minigrd environment solved using **PPO**. **I report the mea
 | RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
 | LSTM | 0.80 | 0.84 |
 
-| Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-N6-V0 (6 rooms) |
+| Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
 | ----- | --------------------------- | --------------------------- | ------------------------ |
 | RIM (Kt = 4, Ka = 3) | 0.81 | 0.66 | 0.05 |
 | LSTM | 0.82 | 0.04 | 0.00 |
