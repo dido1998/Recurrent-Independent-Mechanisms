@@ -18,35 +18,68 @@ This code was tested with python3.6
 
 ## Documentation
 ```
-Class RIM.RIMCell(device, input_size, hidden_size, num_units, rnn_cell, input_key_size = 64, input_value_size = 400,            input_query_size = 64, num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100,  comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1, k = 4)
+Class RIM.RIMCell(device,
+input_size,
+hidden_size,
+num_units,
+rnn_cell,
+input_key_size = 64,
+input_value_size = 400,
+input_query_size = 64,
+num_input_heads = 1,
+input_dropout = 0.1,
+comm_key_size = 32,
+comm_value_size = 100,
+comm_query_size = 32,
+num_comm_heads = 4,
+comm_dropout = 0.1,
+k = 4)
 ```
 For description of the RIMCell please check the paper.
 
 ### Parameters
 **device**: torch.device('cuda') or torch.device('cpu')
+
 **input_size**: The number of expected input features.
+
 **hidden_size**: The number of hidden features.
+
 **num_units**: Number of total RIM units.
+
 **rnn_cell**: `'LSTM'` or `'GRU'`
+
 **input_key_size**: Number of features in the input key.
+
 **input_value_size**: Number of features in the input value.
+
 **input_query_size**: Number of features in the input query.
+
 **num_input_heads**: Number of input attention heads.
+
 **input_dropout**: Dropout applied to the input attention probabilities.
+
 **comm_key_size**: Number of features in the communication key.
+
 **comm_value_size**: Number of features in the communication value.
+
 **comm_query_size**: Number of features in the communication query.
+
 **num_comm_heads**: Number of communication attention heads.
+
 **comm_dropout**: Dropout applied to the communication attention probabilities.
+
 **k**: Number of active RIMs at every time-step.
 
 ### Inputs
-**x**: Input of shape (*batch_size*, 1, *input_size*)
-**hs**: Hidden state for the current time-step of shape (*batch_size, num_units, hidden_size*)
-**cs**: This is given if *rnn_cell = 'LSTM'* else it is `None`. Cell state for the current time-step of shape (*batch_size, num_units, hidden_size*)
+**x**: Input of shape (*batch_size*, 1, *input_size*).
+
+**hs**: Hidden state for the current time-step of shape (*batch_size, num_units, hidden_size*).
+
+**cs**: This is given if *rnn_cell = 'LSTM'* else it is `None`. Cell state for the current time-step of shape (*batch_size, num_units, hidden_size*).
 
 ### Outputs 
 **hs**: The new hidden state of shape (*batch_size, num_units, hidden_size*).
+
 **cs**: This is only returned if *rnn_cell = 'LSTM'*. The new cell state of shape (*batch_size, num_units, hidden_size*).
 
 ### Example
