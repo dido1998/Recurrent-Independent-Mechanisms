@@ -93,6 +93,25 @@ for x in xs:
     hs, cs = rim_model(x, hs, cs)
 ```
 
+## Gym Minigrid
+Results for the gym minigrd environment solved using **PPO**. 
+
+**I report the mean return per episode in each case**
+
+| Model | MiniGrid-Empty-5X5-V0 | MiniGrid-Empty-16X16-V0 |
+| ----- | --------------------- | ----------------------- |
+| RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
+| LSTM | 0.80 | 0.84 |
+
+| Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
+| ----- | --------------------------- | --------------------------- | ------------------------ |
+| RIM (Kt = 4, Ka = 3) | 0.81 | 0.66 | 0.05 |
+| LSTM | 0.82 | 0.04 | 0.00 |
+
+
+
+
+
 ## Sequential MNIST Task
 Results for MNIST task:
 
@@ -134,21 +153,6 @@ python3.6 main.py --args
 | size | Image size for training. |
 | loadsaved | load saved model for training from log_dir. |
 | log_dir | Directory path to save meta data. |
-
-
-## Gym Minigrid
-Results for the gym minigrd environment solved using **PPO**. **I report the mean return per episode in each case**
-
-| Model | MiniGrid-Empty-5X5-V0 | MiniGrid-Empty-16X16-V0 |
-| ----- | --------------------- | ----------------------- |
-| RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
-| LSTM | 0.80 | 0.84 |
-
-| Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
-| ----- | --------------------------- | --------------------------- | ------------------------ |
-| RIM (Kt = 4, Ka = 3) | 0.81 | 0.66 | 0.05 |
-| LSTM | 0.82 | 0.04 | 0.00 |
-
 
 
 
