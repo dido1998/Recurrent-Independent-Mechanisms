@@ -21,10 +21,13 @@ parser.add_argument("--argmax", action="store_true", default=False,
                     help="select the action with highest probability (default: False)")
 parser.add_argument("--pause", type=float, default=0.1,
                     help="pause duration between two consequent actions of the agent (default: 0.1)")
-parser.add_argument("--gif", type=str, default=None,
+parser.add_argument("--gif", type=str, default='5x5_RIM',
                     help="store output as gif with the given filename")
-parser.add_argument("--episodes", type=int, default=1000000,
+parser.add_argument("--episodes", type=int, default=5,
                     help="number of episodes to visualize")
+
+## Model Parameters
+parser.add_argument('--use_rim', action = 'store_true', default = False)
 
 args = parser.parse_args()
 
@@ -47,7 +50,7 @@ print("Environment loaded\n")
 # Load agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax)
+agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax, use_rim = args.use_rim)
 print("Agent loaded\n")
 
 # Run the agent
@@ -61,23 +64,28 @@ env.render('human')
 
 for episode in range(args.episodes):
     obs = env.reset()
-
+    done2 = False
     while True:
         env.render('human')
         if args.gif:
             frames.append(numpy.moveaxis(env.render("rgb_array"), 2, 0))
+            
 
         action = agent.get_action(obs)
         obs, reward, done, _ = env.step(action)
         agent.analyze_feedback(reward, done)
 
         if done or env.window.closed:
+            if episode == 4:
+            	done2 = True
             break
-
-    if env.window.closed:
-        break
-
+    if done2 == True:
+    	env.close()
+    	break
+    #if env.window.closed:
+    #    break
+print('doneeee')
 if args.gif:
     print("Saving gif... ", end="")
-    write_gif(numpy.array(frames), args.gif+".gif", fps=1/args.pause)
+    write_gif(numpy.array(frames), args.gif+".gif")
     print("Done.")

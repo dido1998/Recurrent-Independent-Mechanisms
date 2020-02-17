@@ -23,15 +23,22 @@ class MnistModel(nn.Module):
 
 	def forward(self, x, y = None):
 		x = x.float()
+		
+		# initialize hidden states
 		hs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 		cs = None
 		if self.args['rnn_cell'] == 'LSTM':
 			cs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
+
 		xs = torch.split(x, 1, 1)
+
+		# pass through RIMCell for all timesteps
 		for x in xs:
 			hs, cs = self.rim_model(x, hs, cs)
 		preds = self.Linear(hs.contiguous().view(x.size(0), -1))
+
 		if y is not None:
+			# Compute Loss
 			y = y.long()
 			probs = nn.Softmax(dim = -1)(preds)
 			entropy = torch.mean(torch.sum(probs*torch.log(probs), dim = 1))
@@ -48,9 +55,6 @@ class MnistModel(nn.Module):
 		        total_norm += param_norm.item() ** 2
 	    total_norm = total_norm ** (1. / 2)
 	    return total_norm
-	
-
-
 
 class LSTM(nn.Module):
 	def __init__(self, args):
@@ -94,9 +98,6 @@ class LSTM(nn.Module):
 	        total_norm += param_norm.item() ** 2
 	    total_norm = total_norm ** (1. / 2)
 	    return total_norm
-
-
-
 
 class CopyingModel(nn.Module):
 	def __init__(self, args):

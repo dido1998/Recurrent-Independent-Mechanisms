@@ -23,6 +23,10 @@ parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
 parser.add_argument("--worst-episodes-to-show", type=int, default=10,
                     help="how many worst episodes to show")
+
+## Model Parameters
+parser.add_argument('--use_rim', action = 'store_true', default = False)
+
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -46,7 +50,7 @@ print("Environments loaded\n")
 # Load agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax, args.procs)
+agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax, args.procs, args.use_rim)
 print("Agent loaded\n")
 
 # Initialize logs

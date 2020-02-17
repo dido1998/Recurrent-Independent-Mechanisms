@@ -18,7 +18,6 @@ class blocked_grad(torch.autograd.Function):
 
 
 class GroupLinearLayer(nn.Module):
-    """Container module with an encoder, a recurrent module, and a decoder."""
 
     def __init__(self, din, dout, num_blocks):
         super(GroupLinearLayer, self).__init__()
@@ -34,10 +33,10 @@ class GroupLinearLayer(nn.Module):
 
 class RIMCell(nn.Module):
 	def __init__(self, 
-		device, input_size, hidden_size, num_units, rnn_cell, input_key_size = 64, input_value_size = 400, input_query_size = 64,
+		device, input_size, hidden_size, num_units = 6, rnn_cell = 'LSTM', input_key_size = 64, input_value_size = 400, input_query_size = 64,
 		num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100, comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1,
 		k = 4
-	):#num_units, hidden_size, rnn_cell, num_input_heads, num_comm_heads, query_size, key_size, value_size, k):
+	):
 		super().__init__()
 		self.device = device
 		self.hidden_size = hidden_size
@@ -78,7 +77,12 @@ class RIMCell(nn.Module):
 	    return x.permute(0, 2, 1, 3)
 
 	def input_attention_mask(self, x, h):
-	    #print(x.type())
+	    """
+	    Input : x (batch_size, 2, input_size) [The null input is appended along the first dimension]
+	    		h (batch_size, num_units, hidden_size)
+	    Output: inputs (list of size num_units with each element of shape (batch_size, input_value_size))
+	    		mask_ binary array of shape (batch_size, num_units) where 1 indicates active and 0 indicates inactive
+		"""
 	    key_layer = self.key(x)
 	    value_layer = self.value(x)
 	    query_layer = self.query(h)
@@ -104,6 +108,11 @@ class RIMCell(nn.Module):
 	    return inputs, mask_
 
 	def communication_attention(self, h, mask):
+	    """
+	    Input : h (batch_size, num_units, hidden_size)
+	    	    mask obtained from the input_attention_mask() function
+	    Output: context_layer (batch_size, num_units, hidden_size). New hidden states after communication
+	    """
 	    query_layer = []
 	    key_layer = []
 	    value_layer = []
@@ -111,8 +120,7 @@ class RIMCell(nn.Module):
 	    query_layer = self.query_(h)
 	    key_layer = self.key_(h)
 	    value_layer = self.value_(h)
-	    
-	    
+
 	    query_layer = self.transpose_for_scores(query_layer, self.num_comm_heads, self.comm_query_size)
 	    key_layer = self.transpose_for_scores(key_layer, self.num_comm_heads, self.comm_key_size)
 	    value_layer = self.transpose_for_scores(value_layer, self.num_comm_heads, self.comm_value_size)
@@ -136,10 +144,18 @@ class RIMCell(nn.Module):
 	    return context_layer
 
 	def forward(self, x, hs, cs = None):
-		size = x.size() # (batch_size, num_elements, feature_size)
+		"""
+		Input : x (batch_size, 1 , input_size)
+				hs (batch_size, num_units, hidden_size)
+				cs (batch_size, num_units, hidden_size)
+		Output: new hs, cs for LSTM
+				new hs for GRU
+		"""
+		size = x.size()
 		null_input = torch.zeros(size[0], 1, size[2]).float().to(self.device)
 		x = torch.cat((x, null_input), dim = 1)
-		
+
+		# Compute input attention
 		inputs, mask = self.input_attention_mask(x, hs)
 		h_old = hs * 1.0
 		if cs is not None:
@@ -147,6 +163,8 @@ class RIMCell(nn.Module):
 		hs = list(torch.split(hs, 1,1))
 		if cs is not None:
 			cs = list(torch.split(cs, 1,1))
+
+		# Compute RNN(LSTM or GRU) output
 		for i in range(self.num_units):
 			if cs is None:
 				hs[:, i, :] = self.rnn[i](inputs[i], hs[:, i, :])
@@ -156,11 +174,13 @@ class RIMCell(nn.Module):
 		hs = torch.stack(hs, dim = 1)
 		if cs is not None:
 			cs = torch.stack(cs, dim = 1)
-		
+
+
+		# Block gradient through inactive units
 		mask = mask.unsqueeze(2)
 		h_new = blocked_grad.apply(hs, mask)
 
-
+		# Compute communication attention
 		h_new = self.communication_attention(h_new, mask.squeeze(2))
 
 		hs = mask * h_new + (1 - mask) * h_old

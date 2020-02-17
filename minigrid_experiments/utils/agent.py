@@ -11,15 +11,15 @@ class Agent:
     - to choose an action given an observation,
     - to analyze the feedback (i.e. reward and done state) of its action."""
 
-    def __init__(self, obs_space, action_space, model_dir, device=None, argmax=False, num_envs=1):
+    def __init__(self, obs_space, action_space, model_dir, device=None, argmax=False, num_envs=1, use_rim = False):
         obs_space, self.preprocess_obss = utils.get_obss_preprocessor(obs_space)
-        self.acmodel = ACModel(obs_space, action_space)
+        self.acmodel = ACModel(obs_space, action_space, use_rim = use_rim)
         self.device = device
         self.argmax = argmax
         self.num_envs = num_envs
 
         if self.acmodel.recurrent:
-            self.memories = torch.zeros(self.num_envs, self.acmodel.memory_size).cuda()
+            self.memories = torch.zeros(self.num_envs, self.acmodel.memory_size).to(device)
 
         self.acmodel.load_state_dict(utils.get_model_state(model_dir))
         self.acmodel.to(self.device)
@@ -48,7 +48,7 @@ class Agent:
 
     def analyze_feedbacks(self, rewards, dones):
         if self.acmodel.recurrent:
-            masks = 1 - torch.tensor(dones, dtype=torch.float).cuda().unsqueeze(1)
+            masks = 1 - torch.tensor(dones, dtype=torch.float).to(self.device).unsqueeze(1)
             self.memories *= masks
 
     def analyze_feedback(self, reward, done):
