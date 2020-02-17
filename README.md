@@ -152,11 +152,13 @@ The `--use_rim` flag has similar use as in evaluation.
 </p>
 
 <center>
+
 | Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
 | ----- | --------------------- | ----------------------- |
 | RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
 | RIM (Kt = 4, Ka = 2) | **0.92** | **0.95** |
 | LSTM | 0.80 | 0.84 |
+
   </center>
 
 ### Task 2
