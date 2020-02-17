@@ -2,11 +2,10 @@
 
 An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](https://arxiv.org/pdf/1909.10893.pdf) in PyTorch.
 
-## Requirements
-```
-Pytorch 1.2.0
-numpy 1.18.1
-```
+## Setup
+* For using RIM as a standalone replpacement for LSTMs or GRUs
+   * Install PyTorch 1.2.0 from the [https://pytorch.org/](official website).
+   * Install numpy 1.18.0 using `pip install numpy==1.18.0'
 ## Installation
 ```
 git clone https://github.com/dido1998/Recurrent-Independent-Mechanisms.git
