@@ -27,18 +27,18 @@ parser.add_argument('--T', type=int, default=50, help='T')
 
 parser.add_argument('--num_units', type = int, default = 6)
 parser.add_argument('--rnn_cell', type = str, default = 'LSTM')
-parser.add_argument('--key_size_input', type = int, default = 64)
+parser.add_argument('--key_size_input', type = int, default = 128)
 parser.add_argument('--value_size_input', type = int, default = 400 )
-parser.add_argument('--query_size_input', type = int, default = 64)
+parser.add_argument('--query_size_input', type = int, default = 128)
 parser.add_argument('--num_input_heads', type = int, default = 1)
 parser.add_argument('--num_comm_heads', type = int, default = 4)
 parser.add_argument('--input_dropout', type = float, default = 0.1)
 parser.add_argument('--comm_dropout', type = float, default = 0.1)
 
 
-parser.add_argument('--key_size_comm', type = int, default = 32)
+parser.add_argument('--key_size_comm', type = int, default = 128)
 parser.add_argument('--value_size_comm', type = int, default = 100 )
-parser.add_argument('--query_size_comm', type = int, default = 32)
+parser.add_argument('--query_size_comm', type = int, default = 128)
 parser.add_argument('--k', type = int, default = 4)
 
 parser.add_argument('--size', type = int, default = 14)
@@ -52,7 +52,7 @@ log_dir = args['log_dir']
 
 inp_size = 1
 out_size = 9
-train_size = 100000
+train_size = 50000
 test_size = 2000
 
 def create_dataset(size, T):
@@ -134,7 +134,7 @@ def train_model(model, epochs, state = None):
 	
 	iters = -1
 	p_detach=0.
-	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
+	optimizer = torch.optim.Adam(model.parameters(), lr = 0.0005)
 	for epoch in range(start_epoch, epochs):
 		
 		print('epoch ' + str(epoch + 1))
@@ -156,7 +156,7 @@ def train_model(model, epochs, state = None):
 			output, l, l1= model(inp_x, inp_y)
 			optimizer.zero_grad()
 			l.backward()
-			torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+			#torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 			optimizer.step()
 			loss_val = l.item()
 			epoch_loss+=loss_val
@@ -167,7 +167,7 @@ def train_model(model, epochs, state = None):
 
 
 		print('loss:'+str(epoch_loss / epoch_iter))
-		print('loss_last_10:'+str(loss_last_10/200))
+		print('loss_last_10:'+str(loss_last_10/100))
 		t_loss, accuracy = test_model(model, test_x, test_y)
 	
 		print('best validation accuracy ' + str(best_acc))
