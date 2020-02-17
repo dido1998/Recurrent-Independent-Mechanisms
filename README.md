@@ -146,21 +146,27 @@ The `--use_rim` flag has similar use as in evaluation.
 
 **I report the mean return per episode in each case**
 
+
 ### Task 1
+
+The model shown in the gif has been trained on the MiniGrid-Empty-5X5-V0 environment.
+
 <p align="center">
   <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif">
 </p>
 
 
 
-                          | Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
-                          | ----- | --------------------- | ----------------------- |
-                          | RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
-                          | RIM (Kt = 4, Ka = 2) | **0.92** | **0.95** |
-                          | LSTM | 0.80 | 0.84 |
+| Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
+| ----- | --------------------- | ----------------------- |
+| RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
+| RIM (Kt = 4, Ka = 2) | **0.92** | **0.95** |
+| LSTM | 0.80 | 0.84 |
 
 
 ### Task 2
+
+The model shown in the gif has been trained on the MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) environment.
 
 <p align="center">
   <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/N4_RIM.gif">
@@ -179,6 +185,8 @@ The `--use_rim` flag has similar use as in evaluation.
 | RIM (Kt=4, Ka = 3) | **0.90** | **0.68** | **0.38** | **0.18** |
 | RIM (Kt = 4, Ka = 2) | 0.85 | 0.62 | 0.29 | 0.13 |
 | LSTM | 0.90 | 0.63 | 0.35 | 0.12 |
+
+**Insight**: Task 2 and Task 3 demonstrate the importance of the hyper-parameter Ka (number of active modules per timestep). We can see that reducing Ka from 3 to 2 drastically reduces performance especially in task 2. We also that the RIM with Ka = 2 is the best performing model for task 1 but task 1 is a comparitively simple task and we need 3 active RIMs for complex tasks. It would be interesting to see what causes each RIM to activate in each environment. 
 
 
 
