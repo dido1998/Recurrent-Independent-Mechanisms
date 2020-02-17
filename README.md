@@ -147,7 +147,7 @@ The `--use_rim` flag has similar use as in evaluation.
 **I report the mean return per episode in each case**
 
 ### Task 1
-
+![GIF for MiniGrid-Empty-16X16-v0](README-RES/16_16_RIM.gif)
 | Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
 | ----- | --------------------- | ----------------------- |
 | RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
