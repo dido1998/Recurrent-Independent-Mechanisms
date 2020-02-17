@@ -4,7 +4,7 @@ An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](http
 
 ## Setup
 * For using RIM as a standalone replpacement for LSTMs or GRUs
-   * Install PyTorch 1.2.0 from the [https://pytorch.org/](official website).
+   * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
    * Install numpy 1.18.0 using `pip install numpy==1.18.0'
 ## Installation
 ```
