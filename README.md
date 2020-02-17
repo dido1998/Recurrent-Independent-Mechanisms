@@ -18,7 +18,7 @@ Running the **Installation** instructions below will automatically install the a
 ## Installation
 ```
 git clone https://github.com/dido1998/Recurrent-Independent-Mechanisms.git
-cd Recurrent-Independent-Mechanisms
+cd Recurrent\ Independent\ Mechanisms
 pip install -e .
 ```
 This will allow you to use RIMs from anywhere in your system.
