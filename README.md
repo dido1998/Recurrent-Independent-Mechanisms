@@ -6,11 +6,13 @@ An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](http
 * For using RIM as a standalone replpacement for LSTMs or GRUs
    * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
    * Install [numpy](https://numpy.org/) 1.18.0 using `pip install numpy==1.18.0`
+Running the [Installation] instructions below will automatically install the above libraries.
 * For running the experiments below
    * Install [tqdm](https://github.com/tqdm/tqdm) using `pip install tqdm`
    * For running the RL experiments
-      * Install [gym-mingrid](https://github.com/maximecb/gym-minigrid) using `pip install gym-minigrid`
-      * Insta
+      * Install [gym-minigrid](https://github.com/maximecb/gym-minigrid) using `pip install gym-minigrid`
+      * Install [torch_ac](https://github.com/lcswillems/torch-ac) using `pip install torch_ac>=1.1.0`
+      * Install [tensorboardX](https://github.com/lanpa/tensorboardX) using `pip install tensorboardX>=1.6`
 ## Installation
 ```
 git clone https://github.com/dido1998/Recurrent-Independent-Mechanisms.git
