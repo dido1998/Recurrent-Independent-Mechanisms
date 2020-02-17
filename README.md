@@ -3,11 +3,17 @@
 An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](https://arxiv.org/pdf/1909.10893.pdf) in PyTorch.
 
 ## Paper Summary
-This paper aims to build models that can generalize to different environments with specific factors of variation from the environment that it was trained on. To achieve this the authors build recurrent networks that are modular in nature and each module is independent of the other modules and only interact sparsely through attention. In this way each module can learn different aspects of the environment and is only responsible for ensuring similar performance the same aspect in a different environment.
+This paper aims to build models that can generalize to different environments with specific factors of variation from the environment that it was trained on. To achieve this the authors build recurrent networks that are modular in nature and each module is independent of the other modules and only interact sparsely through attention. In this way each module can learn different aspects of the environment and is only responsible for ensuring similar performance on the same aspect of a different environment.
 
 These different modules are modeled using LSTMs or GRUs. The total number of modules are fixed to Kt. At each time-step a fixed number (Ka) modules are selected to be active. These Ka active modules are selected using an input attention mechanism. The top-Ka modules that produce the highest scores for the input are selected to be active. The other modules are fed a null-input (all zeros).
 
-Once the new states for each module (normal LSTM or GRU computation) is computed, each module can interact with each other using another attention mechanism which is called the communication attention mechanism. Only the states of the active modules are updated using this attention mechanism. The active modules can refer to the active modules as well as the inactive modules for updating their states.
+Once the new states for each module (normal LSTM or GRU computation) are computed given their inputs that come from the input attention, each module can interact with each other using another attention mechanism which is called the communication attention mechanism. Only the states of the active modules are updated using this attention mechanism. The active modules can refer to the active modules as well as the inactive modules for updating their states. 
+
+The image below has been taken from the original [paper](https://arxiv.org/pdf/1909.10893.pdf).
+
+<p align="center">
+  <img width="560" height="300" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/rim_image.png">
+</p>
 
 ## Setup
 * For using RIM as a standalone replpacement for LSTMs or GRUs
@@ -111,19 +117,60 @@ for x in xs:
 ## Gym MiniGrid
 The minigrid environment is available [here](https://github.com/maximecb/gym-minigrid). Results for the gym minigrd environment solved using **PPO**. 
 
+You need to `cd` into the `minigrid_experiments` directory to run these experiments.
+
+### Training
+```
+python3.6 train.py --algo ppo --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)>
+--model <name of the directory to store the trained model and related files>
+--use_rim
+--frames <num_frames>
+```
+You can also use `a2c` for training by changing the `--algo` option accordingly. If the `--use_rim` is not specified, the model will use a single`LSTM` for training. I recommend using a *80000* frames for task-1, *1000000* for task-2 and 300000 for task-3. I recommend keeping the other parameters same for convergence. If you tweak the other parameters and get better results let me know :)
+
+### Evaluation
+```
+python3.6 evaluate.py --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)>
+--model <directory where model is stored> --use_rim
+```
+The `--use_rim` flag is used when your model was trained using an RIM. For simple LSTM you can leave the `--use_rim` flag.
+
+### Visualization
+```
+python3.6 visualize.py --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)> 
+--model <directory where model is stored> --gif <name of the gif file> --use_rim
+```
+The `--use_rim` flag has similar use as in evaluation.
+
 #### For all the tables, the model is trained on the star-marked column and only evaluated on the other columns.
 
 **I report the mean return per episode in each case**
 
+### Task 1
+
 | Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
 | ----- | --------------------- | ----------------------- |
-| RIM (Kt = 4, Ka = 3) | **0.91** | **0.92** |
+| RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
+| RIM (Kt = 4, Ka = 2) | **0.92** | **0.95** |
 | LSTM | 0.80 | 0.84 |
+
+### Task 2
 
 | Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) **\*** | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
 | ----- | --------------------------- | --------------------------- | ------------------------ |
-| RIM (Kt = 4, Ka = 3) | **0.81** | **0.66** | **0.05** |
-| LSTM | 0.82 | 0.04 | 0.00 |
+| RIM (Kt = 4, Ka = 3) | 0.81 | **0.66** | **0.05** |
+| RIM (Kt = 4, Ka = 2) | 0.81 | 0.10 | 0.00 | 
+| LSTM | **0.82** | 0.04 | 0.00 |
+
+### Task 3
+
+| Model | MiniGrid-DoorKey-5x5-v0 **\*** | MiniGrid-DoorKey-6x6-v0 | MiniGrid-DoorKey-8x8-v0 | MiniGrid-DoorKey-16x16-v0 |
+| ----- | ------------------------------ | ----------------------- | ----------------------- | ------------------------- |
+| RIM (Kt=4, Ka = 3) | **0.90** | **0.68** | **0.38** | **0.18** |
+| RIM (Kt = 4, Ka = 2) | 0.85 | 0.62 | 0.29 | 0.13 |
+| LSTM | 0.90 | 0.63 | 0.35 | 0.12 |
+
+
 
 ## Sequential MNIST Task
 Results for MNIST task: 
@@ -170,6 +217,8 @@ python3.6 main.py --args
 | loadsaved | load saved model for training from log_dir. |
 | log_dir | Directory path to save meta data. |
 
+## Contact
 
+For any issues/questions, you can open a GitHub issue or contact [me](http://aniketdidolkar.in/) directly. 
 
 
