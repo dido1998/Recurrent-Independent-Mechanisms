@@ -180,6 +180,10 @@ The model shown in the gif has been trained on the MiniGrid-MultiRoom-N2-S4-V0 (
 
 ### Task 3
 
+<p align="center">
+  <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/6_6_RIM_DoorKey.gif">
+</p>
+
 | Model | MiniGrid-DoorKey-5x5-v0 **\*** | MiniGrid-DoorKey-6x6-v0 | MiniGrid-DoorKey-8x8-v0 | MiniGrid-DoorKey-16x16-v0 |
 | ----- | ------------------------------ | ----------------------- | ----------------------- | ------------------------- |
 | RIM (Kt=4, Ka = 3) | **0.90** | **0.68** | **0.38** | **0.18** |
