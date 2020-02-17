@@ -121,24 +121,24 @@ You need to `cd` into the `minigrid_experiments` directory to run these experime
 
 ### Training
 ```
-python3.6 train.py --algo ppo --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)>
---model <name of the directory to store the trained model and related files>
---use_rim
---frames <num_frames>
+python3.6 train.py --algo ppo --env <Any of the available envs in the minigrid repo
+                   --model <name of the directory to store the trained model and related files>
+                   --use_rim
+                   --frames <num_frames>
 ```
 You can also use `a2c` for training by changing the `--algo` option accordingly. If the `--use_rim` is not specified, the model will use a single`LSTM` for training. I recommend using a *80000* frames for task-1, *1000000* for task-2 and 300000 for task-3. I recommend keeping the other parameters same for convergence. If you tweak the other parameters and get better results let me know :)
 
 ### Evaluation
 ```
-python3.6 evaluate.py --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)>
---model <directory where model is stored> --use_rim
+python3.6 evaluate.py --env <Any of the available envs in the minigrid repo
+                      --model <directory where model is stored> --use_rim
 ```
 The `--use_rim` flag is used when your model was trained using an RIM. For simple LSTM you can leave the `--use_rim` flag.
 
 ### Visualization
 ```
-python3.6 visualize.py --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)> 
---model <directory where model is stored> --gif <name of the gif file> --use_rim
+python3.6 visualize.py --env <Any of the available envs in the minigrid repo 
+                        --model <directory where model is stored> --gif <name of the gif file> --use_rim
 ```
 The `--use_rim` flag has similar use as in evaluation.
 
@@ -146,10 +146,12 @@ The `--use_rim` flag has similar use as in evaluation.
 
 **I report the mean return per episode in each case**
 
+**The environment names used below are same as the ones in the [minigrid repo](https://github.com/maximecb/gym-minigrid)**
+
 
 ### Task 1
 
-The model shown in the gif has been trained on the MiniGrid-Empty-5X5-V0 environment.
+The model shown in the gif has been trained on the MiniGrid-Empty-5x5-V0 environment.
 
 <p align="center">
   <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif">
@@ -157,7 +159,7 @@ The model shown in the gif has been trained on the MiniGrid-Empty-5X5-V0 environ
 
 
 
-| Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
+| Model | MiniGrid-Empty-5x5-V0 **\*** | MiniGrid-Empty-16x16-V0 |
 | ----- | --------------------- | ----------------------- |
 | RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
 | RIM (Kt = 4, Ka = 2) | **0.92** | **0.95** |
@@ -179,6 +181,8 @@ The model shown in the gif has been trained on the MiniGrid-MultiRoom-N2-S4-V0 (
 | LSTM | **0.82** | 0.04 | 0.00 |
 
 ### Task 3
+
+The model shown in the gif has been trained on the MiniGrid-DoorKey-5x5-V0 environment.
 
 <p align="center">
   <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/6_6_RIM_DoorKey.gif">
