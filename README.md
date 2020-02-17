@@ -9,6 +9,8 @@ These different modules are modeled using LSTMs or GRUs. The total number of mod
 
 Once the new states for each module (normal LSTM or GRU computation) is computed, each module can interact with each other using another attention mechanism which is called the communication attention mechanism. Only the states of the active modules are updated using this attention mechanism. The active modules can refer to the active modules as well as the inactive modules for updating their states.
 
+![Image taken from paper](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/rim_image.png)
+
 ## Setup
 * For using RIM as a standalone replpacement for LSTMs or GRUs
    * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
@@ -124,6 +126,11 @@ The minigrid environment is available [here](https://github.com/maximecb/gym-min
 | ----- | --------------------------- | --------------------------- | ------------------------ |
 | RIM (Kt = 4, Ka = 3) | **0.81** | **0.66** | **0.05** |
 | LSTM | 0.82 | 0.04 | 0.00 |
+
+| Model | MiniGrid-DoorKey-5x5-v0 **\*** | MiniGrid-DoorKey-6x6-v0 | MiniGrid-DoorKey-8x8-v0 | MiniGrid-DoorKey-16x16-v0 |
+| ----- | ------------------------------ | ----------------------- | ----------------------- | ------------------------- |
+| RIM (Kt=4, Ka = 3) | **0.90** | **0.68** | **0.38** | **0.18** |
+| LSTM | 0.90 | 0.63 | 0.35 | 0.12 |
 
 ## Sequential MNIST Task
 Results for MNIST task: 
