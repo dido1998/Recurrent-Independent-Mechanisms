@@ -148,7 +148,7 @@ The `--use_rim` flag has similar use as in evaluation.
 
 ### Task 1
 <p align="center">
-  <img width="460" height="300" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif">
+  <img width="460" height="350" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif">
 </p>
 
 | Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
@@ -160,7 +160,7 @@ The `--use_rim` flag has similar use as in evaluation.
 ### Task 2
 
 <p align="center">
-  <img width="460" height="300" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/N4_RIM.gif">
+  <img width="460" height="350" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/N4_RIM.gif">
 </p>
 
 | Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) **\*** | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
