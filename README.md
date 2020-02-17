@@ -181,6 +181,8 @@ python3.6 main.py --args
 | loadsaved | load saved model for training from log_dir. |
 | log_dir | Directory path to save meta data. |
 
+## Contact
 
+For any issues/questions, you can open a GitHub issue or contact [me](http://aniketdidolkar.in/) directly. 
 
 
