@@ -12,7 +12,7 @@ Once the new states for each module (normal LSTM or GRU computation) is computed
 The image below has been taken from the original [paper](https://arxiv.org/pdf/1909.10893.pdf).
 
 <p align="center">
-  <img width="460" height="460" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/rim_image.png">
+  <img width="560" height="300" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/rim_image.png">
 </p>
 
 ## Setup
