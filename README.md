@@ -2,6 +2,13 @@
 
 An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](https://arxiv.org/pdf/1909.10893.pdf) in PyTorch.
 
+## Paper Summary
+This paper aims to build models that can generalize to different environments with specific factors of variation from the environment that it was trained on. To achieve this the authors build recurrent networks that are modular in nature and each module is independent of the other modules and only interact sparsely through attention. In this way each module can learn different aspects of the environment and is only responsible for ensuring similar performance the same aspect in a different environment.
+
+These different modules are modeled using LSTMs or GRUs. The total number of modules are fixed to Kt. At each time-step a fixed number (Ka) modules are selected to be active. These Ka active modules are selected using an input attention mechanism. The top-Ka modules that produce the highest scores for the input are selected to be active. The other modules are fed a null-input (all zeros).
+
+Once the new states for each module (normal LSTM or GRU computation) is computed, each module can interact with each other using another attention mechanism which is called the communication attention mechanism. Only the states of the active modules are updated using this attention mechanism. The active modules can refer to the active modules as well as the inactive modules for updating their states.
+
 ## Setup
 * For using RIM as a standalone replpacement for LSTMs or GRUs
    * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
@@ -29,8 +36,8 @@ This code was tested with python3.6
 Class RIM.RIMCell(device,
 input_size,
 hidden_size,
-num_units,
-rnn_cell,
+num_units = 6,
+rnn_cell = 'LSTM',
 input_key_size = 64,
 input_value_size = 400,
 input_query_size = 64,
@@ -101,9 +108,7 @@ for x in xs:
     hs, cs = rim_model(x, hs, cs)
 ```
 
-
-
-## Gym Minigrid
+## Gym MiniGrid
 The minigrid environment is available [here](https://github.com/maximecb/gym-minigrid). Results for the gym minigrd environment solved using **PPO**. 
 
 #### For all the tables, the model is trained on the star-marked column and only evaluated on the other columns.
