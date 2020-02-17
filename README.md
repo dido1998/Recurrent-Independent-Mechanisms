@@ -117,24 +117,60 @@ for x in xs:
 ## Gym MiniGrid
 The minigrid environment is available [here](https://github.com/maximecb/gym-minigrid). Results for the gym minigrd environment solved using **PPO**. 
 
+You need to `cd` into the `minigrid_experiments` directory to run these experiments.
+
+### Training
+```
+python3.6 train.py --algo ppo --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)>
+--model <name of the directory to store the trained model and related files>
+--use_rim
+--frames <num_frames>
+```
+You can also use `a2c` for training by changing the `--algo` option accordingly. If the `--use_rim` is not specified, the model will use a single`LSTM` for training. I recommend using a *80000* frames for task-1, *1000000* for task-2 and 300000 for task-3. I recommend keeping the other parameters same for convergence. If you tweak the other parameters and get better results let me know :)
+
+### Evaluation
+```
+python3.6 evaluate.py --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)>
+--model <directory where model is stored> --use_rim
+```
+The `--use_rim` flag is used when your model was trained using an RIM. For simple LSTM you can leave the `--use_rim` flag.
+
+### Visualization
+```
+python3.6 visualize.py --env <Any of the available envs in the [minigrid repo](https://github.com/maximecb/gym-minigrid)> 
+--model <directory where model is stored> --gif <name of the gif file> --use_rim
+```
+The `--use_rim` flag has similar use as in evaluation.
+
 #### For all the tables, the model is trained on the star-marked column and only evaluated on the other columns.
 
 **I report the mean return per episode in each case**
 
+### Task 1
+
 | Model | MiniGrid-Empty-5X5-V0 **\*** | MiniGrid-Empty-16X16-V0 |
 | ----- | --------------------- | ----------------------- |
-| RIM (Kt = 4, Ka = 3) | **0.91** | **0.92** |
+| RIM (Kt = 4, Ka = 3) | 0.91 | 0.92 |
+| RIM (Kt = 4, Ka = 2) | **0.92** | **0.95** |
 | LSTM | 0.80 | 0.84 |
+
+### Task 2
 
 | Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) **\*** | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
 | ----- | --------------------------- | --------------------------- | ------------------------ |
-| RIM (Kt = 4, Ka = 3) | **0.81** | **0.66** | **0.05** |
-| LSTM | 0.82 | 0.04 | 0.00 |
+| RIM (Kt = 4, Ka = 3) | 0.81 | **0.66** | **0.05** |
+| RIM (Kt = 4, Ka = 2) | 0.81 | 0.10 | 0.00 | 
+| LSTM | **0.82** | 0.04 | 0.00 |
+
+### Task 3
 
 | Model | MiniGrid-DoorKey-5x5-v0 **\*** | MiniGrid-DoorKey-6x6-v0 | MiniGrid-DoorKey-8x8-v0 | MiniGrid-DoorKey-16x16-v0 |
 | ----- | ------------------------------ | ----------------------- | ----------------------- | ------------------------- |
 | RIM (Kt=4, Ka = 3) | **0.90** | **0.68** | **0.38** | **0.18** |
+| RIM (Kt = 4, Ka = 2) | 0.85 | 0.62 | 0.29 | 0.13 |
 | LSTM | 0.90 | 0.63 | 0.35 | 0.12 |
+
+
 
 ## Sequential MNIST Task
 Results for MNIST task: 
