@@ -7,7 +7,7 @@ An implementation of [Recurrent Independent Mechanisms (Goyal et al. 2019)](http
    * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
    * Install [numpy](https://numpy.org/) 1.18.0 using `pip install numpy==1.18.0`
    
-Running the [Installation] instructions below will automatically install the above libraries.
+Running the **Installation** instructions below will automatically install the above libraries.
 
 * For running the experiments below
    * Install [tqdm](https://github.com/tqdm/tqdm) using `pip install tqdm`
