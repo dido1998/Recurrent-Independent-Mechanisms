@@ -121,7 +121,7 @@ You need to `cd` into the `minigrid_experiments` directory to run these experime
 
 ### Training
 ```
-python3.6 train.py --algo ppo --env <Any of the available envs in the minigrid repo
+python3.6 train.py --algo ppo --env <Any of the available envs in the minigrid repo>
                    --model <name of the directory to store the trained model and related files>
                    --use_rim
                    --frames <num_frames>
@@ -130,15 +130,18 @@ You can also use `a2c` for training by changing the `--algo` option accordingly.
 
 ### Evaluation
 ```
-python3.6 evaluate.py --env <Any of the available envs in the minigrid repo
-                      --model <directory where model is stored> --use_rim
+python3.6 evaluate.py --env <Any of the available envs in the minigrid repo>
+                      --model <directory where model is stored> 
+                      --use_rim
 ```
 The `--use_rim` flag is used when your model was trained using an RIM. For simple LSTM you can leave the `--use_rim` flag.
 
 ### Visualization
 ```
 python3.6 visualize.py --env <Any of the available envs in the minigrid repo 
-                        --model <directory where model is stored> --gif <name of the gif file> --use_rim
+                        --model <directory where model is stored> 
+                        --gif <name of the gif file> 
+                        --use_rim
 ```
 The `--use_rim` flag has similar use as in evaluation.
 
