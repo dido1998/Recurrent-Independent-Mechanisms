@@ -138,7 +138,7 @@ The `--use_rim` flag is used when your model was trained using an RIM. For simpl
 
 ### Visualization
 ```
-python3.6 visualize.py --env <Any of the available envs in the minigrid repo 
+python3.6 visualize.py --env <Any of the available envs in the minigrid repo>
                         --model <directory where model is stored> 
                         --gif <name of the gif file> 
                         --use_rim
