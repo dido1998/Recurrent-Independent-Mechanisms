@@ -204,7 +204,7 @@ The model shown in the gif has been trained on the MiniGrid-DoorKey-5x5-V0 envir
 ## Sequential MNIST Task
 Results for MNIST task: 
 
-#### The model has been trained on MNIST datset with indicidual image size 14*14
+#### The model has been trained on MNIST datset with individual image size 14*14
 
 
 |      | Kt | Ka | h   | 16*16  | 19*19 | 24*24 |
