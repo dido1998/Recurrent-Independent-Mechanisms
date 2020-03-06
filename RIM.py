@@ -33,11 +33,11 @@ class GroupLinearLayer(nn.Module):
 
 class RIMCell(nn.Module):
 	def __init__(self, 
-		device, input_size, hidden_size, num_units = 6, rnn_cell = 'LSTM', input_key_size = 64, input_value_size = 400, input_query_size = 64,
-		num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100, comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1,
-		k = 4
+		device, input_size, hidden_size, num_units, k, rnn_cell, input_key_size = 64, input_value_size = 400, input_query_size = 64,
+		num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100, comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1
 	):
 		super().__init__()
+		assert comm_value_size == hidden_size
 		self.device = device
 		self.hidden_size = hidden_size
 		self.num_units =num_units
@@ -167,7 +167,7 @@ class RIMCell(nn.Module):
 		# Compute RNN(LSTM or GRU) output
 		for i in range(self.num_units):
 			if cs is None:
-				hs[:, i, :] = self.rnn[i](inputs[i], hs[:, i, :])
+				hs[i] = self.rnn[i](inputs[i].squeeze(1), hs[i].squeeze(1))
 			else:
 
 				hs[i], cs[i] = self.rnn[i](inputs[i].squeeze(1), (hs[i].squeeze(1), cs[i].squeeze(1)))
@@ -188,4 +188,40 @@ class RIMCell(nn.Module):
 			cs = mask * cs + (1 - mask) * c_old
 			return hs, cs
 
-		return hs
+		return hs, None
+
+
+class RIM(nn.Module):
+	def __init__(self, device, input_size, hidden_size, num_units, k, rnn_cell, **kwargs):
+		super().__init__()
+		if device == 'cuda':
+			self.device = torch.device('cuda')
+		else:
+			self.device = torch.device('cpu')
+		self.rnn_cell = rnn_cell
+		self.num_units = num_units
+		self.hidden_size = hidden_size
+		self.rimcell = RIMCell(self.device, input_size, hidden_size, num_units, k, rnn_cell, **kwargs)
+
+	def forward(self, x):
+		"""
+		Input: x (seq_len, batch_size, feature_size
+		Output: outputs (batch_size, seqlen, hidden_size * num_units)
+				h (batch_size, num_units, hidden_size)
+		"""
+		hs = torch.randn(x.size(1), self.num_units, self.hidden_size).to(self.device)
+		cs = None
+		if self.rnn_cell == 'LSTM':
+			cs = torch.randn(x.size(1), self.num_units, self.hidden_size).to(self.device)
+
+		x = torch.transpose(x, 0, 1)
+		xs = torch.split(x, 1, 1)
+		outputs = []
+		for x in xs:
+			hs, cs = self.rimcell(x, hs, cs)
+			outputs.append(hs.view(x.size(0), -1))
+
+		outputs = torch.stack(outputs, dim = 0)
+		if self.rnn_cell == 'LSTM':
+			return outputs, (hs.unsqueeze(0), cs.unsqueeze(0))
+		return outputs, hs.unsqueeze(0)
