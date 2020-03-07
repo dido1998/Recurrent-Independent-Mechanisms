@@ -15,6 +15,9 @@ The image below has been taken from the original [paper](https://arxiv.org/pdf/1
   <img width="560" height="300" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/rim_image.png">
 </p>
 
+## Updates
+**7/3/2019 : Added support for n-layered and bidirectional RIM similar to `nn.LSTM` and `nn.GRU`.**
+
 ## Setup
 * For using RIM as a standalone replacement for LSTMs or GRUs
    * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
@@ -38,6 +41,9 @@ This will allow you to use RIMs from anywhere in your system.
 This code was tested with python3.6
 
 ## Documentation
+### RIMCell
+A single RIM cell similar to `nn.LSTMCell` or `nn.GRUCell`.
+
 ```
 Class RIM.RIMCell(device,
 input_size,
@@ -58,12 +64,12 @@ k = 4)
 ```
 For description of the RIMCell please check the paper.
 
-### Parameters
+#### Parameters
 | Parameter | Description |
 | --------- | ----------- |
 | **device** | `torch.device('cuda')` or `torch.device('cpu')`. |
 | **input_size** | The number of expected input features. |
-| **hidden_size** | The number of hidden features. |
+| **hidden_size** | The number of hidden features in each unit. |
 | **num_units** | Number of total RIM units. |
 | **rnn_cell** | `'LSTM'` or `'GRU'` |
 | **input_key_size** | Number of features in the input key. |
@@ -78,18 +84,18 @@ For description of the RIMCell please check the paper.
 | **comm_dropout** | Dropout applied to the communication attention probabilities. |
 | **k** | Number of active RIMs at every time-step. |
 
-### Inputs
+#### Inputs
 | Input | Description |
 | ----- | ----------- |
 | **x** | Input of shape (*batch_size*, 1, *input_size*). |
 | **hs** | Hidden state for the current time-step of shape (*batch_size, num_units, hidden_size*). |
-| **cs** | This is given if *rnn_cell = 'LSTM'* else it is `None`. Cell state for the current time-step of shape (*batch_size, num_units, hidden_size*). |
+| **cs** | This is given if `rnn_cell == 'LSTM'` else it is `None`. Cell state for the current time-step of shape (*batch_size, num_units, hidden_size*). |
 
-### Outputs 
+#### Outputs 
 | Output | Description |
 | ------ | ----------- |
 | **hs** | The new hidden state of shape (*batch_size, num_units, hidden_size*). |
-| **cs** | This is only returned if *rnn_cell = 'LSTM'*. The new cell state of shape (*batch_size, num_units, hidden_size*). |
+| **cs** | This is only returned if `rnn_cell == 'LSTM'`. The new cell state of shape (*batch_size, num_units, hidden_size*).|
 
 ### Example
 ```
@@ -113,6 +119,50 @@ xs = torch.split(xs, 1, 1)
 for x in xs:
     hs, cs = rim_model(x, hs, cs)
 ```
+----
+
+### RIM
+A recurrent network made up of RIM cells similar to `nn.LSTM` or `nn.GRU`.
+
+```
+class RIM.RIM(device,
+input_size,
+hidden_size,
+num_units,
+k,
+rnn_cell,
+n_layers,
+bidirectional,
+**kwargs
+)
+```
+
+#### Parameters
+| Parameter | Description |
+| --------- | ----------- |
+| **device** | `'cpu'` or `'cuda'`. |
+| **input_size** | Input feature size. |
+| **hidden_size** | Hidden feature size of each RIM unit. |
+| **num_units** | Number of RIM units. |
+| **k** | Number of active RIMs at each time-step | 
+| **rnn_cell** | `'LSTM'` or `'GRU'` |
+| **n_layers** | Number of RIM layers |
+| **bidirectional** | `True` or `False` |
+
+The keyword arguents are same as `RIM.RIMCell`.
+
+#### Inputs
+| Input | Description |
+| **x** | Input of shape (*seq_len, batch_size, input_size*) |
+| **hs** | Hidden state of shape (*num_layers x num_directions, batch_size, hidden_size x num_units*). If not provided, it is randomly initialized |
+| **cs** |  Provided only id `rnn_cell == LSTM`. Shape is same as **hs**. If not provided, it is randomly initialized. |
+
+#### Outputs
+| Output | Description | 
+| **output** | Output of shape (*seq_len, batch_size, num_directions x hidden_size*) |
+| **hs** | Hidden state of shape (*num_directions x num_layers, batch_size, hidden_size x num_units*) |
+| **cs** | Returned if `rnn_cell == LSTM`. Cell state of shape same as **hs**. | 
+
 
 ## Gym MiniGrid
 The minigrid environment is available [here](https://github.com/maximecb/gym-minigrid). Results for the gym minigrd environment solved using **PPO**. 
