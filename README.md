@@ -165,6 +165,13 @@ The keyword arguents are same as `RIM.RIMCell`.
 | **hs** | Hidden state of shape (*num_directions * num_layers, batch_size, hidden_size * num_units*) |
 | **cs** | Returned if `rnn_cell == LSTM`. Cell state of shape same as **hs**. | 
 
+#### Example
+```
+from RIM import RIM
+rim_model = RIM('cuda', 16, 24, 6, 4, 'LSTM', 4, True)
+x = torch.randn(7, 4, 16).cuda()
+out, h, c = rim_model(x)
+```
 
 ## Gym MiniGrid
 The minigrid environment is available [here](https://github.com/maximecb/gym-minigrid). Results for the gym minigrd environment solved using **PPO**. 
@@ -211,6 +218,14 @@ The model shown in the gif has been trained on the MiniGrid-Empty-5x5-V0 environ
 <p align="center">
   <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif">
 </p>
+ <div class="row">
+  <div class="column">
+    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif" alt="Snow" style="width:100%">
+  </div>
+  <div class="column">
+    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5X5_LSTM.gif" alt="Forest" style="width:100%">
+  </div>
+</div> 
 
 
 
