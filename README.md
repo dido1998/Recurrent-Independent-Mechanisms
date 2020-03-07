@@ -153,12 +153,14 @@ The keyword arguents are same as `RIM.RIMCell`.
 
 #### Inputs
 | Input | Description |
+| ----- | ----------- |
 | **x** | Input of shape (*seq_len, batch_size, input_size*) |
 | **hs** | Hidden state of shape (*num_layers x num_directions, batch_size, hidden_size x num_units*). If not provided, it is randomly initialized |
 | **cs** |  Provided only id `rnn_cell == LSTM`. Shape is same as **hs**. If not provided, it is randomly initialized. |
 
 #### Outputs
-| Output | Description | 
+| Output | Description |
+| ------ | ----------- |
 | **output** | Output of shape (*seq_len, batch_size, num_directions x hidden_size*) |
 | **hs** | Hidden state of shape (*num_directions x num_layers, batch_size, hidden_size x num_units*) |
 | **cs** | Returned if `rnn_cell == LSTM`. Cell state of shape same as **hs**. | 
