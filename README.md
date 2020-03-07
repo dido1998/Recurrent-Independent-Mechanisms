@@ -213,7 +213,7 @@ The `--use_rim` flag has similar use as in evaluation.
 
 ### Task 1
 
-The model shown in the gif has been trained on the MiniGrid-Empty-5x5-V0 environment.
+The models shown in the gif have been trained on the MiniGrid-Empty-5x5-V0 environment.
 | LSTM|  RIM |
 :-------------------------:|:-------------------------:
 ![](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5X5_LSTM.gif)  |  ![](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif)
@@ -229,11 +229,10 @@ The model shown in the gif has been trained on the MiniGrid-Empty-5x5-V0 environ
 
 ### Task 2
 
-The model shown in the gif has been trained on the MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) environment.
-
-<p align="center">
-  <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/N4_RIM.gif">
-</p>
+The modelS shown in the gif have been trained on the MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) environment.
+| LSTM|  RIM |
+:-------------------------:|:-------------------------:
+![](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/N4_LSTM.gif)  |  ![](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/N4_RIM.gif)
 
 | Model | MiniGrid-MultiRoom-N2-S4-V0 (2 rooms) **\*** | MiniGrid-MultiRoom-N2-S5-V0 (4 rooms) | MiniGrid-MultiRoom-N6-V0 (6 rooms) |
 | ----- | --------------------------- | --------------------------- | ------------------------ |
@@ -243,11 +242,12 @@ The model shown in the gif has been trained on the MiniGrid-MultiRoom-N2-S4-V0 (
 
 ### Task 3
 
-The model shown in the gif has been trained on the MiniGrid-DoorKey-5x5-V0 environment.
+The models shown in the gif have been trained on the MiniGrid-DoorKey-5x5-V0 environment.
 
-<p align="center">
-  <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/6_6_RIM_DoorKey.gif">
-</p>
+| LSTM|  RIM |
+:-------------------------:|:-------------------------:
+![](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5x5_DoorkKey_LSTM.gif)  |  ![](https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/6_6_RIM_DoorKey.gif)
+
 
 | Model | MiniGrid-DoorKey-5x5-v0 **\*** | MiniGrid-DoorKey-6x6-v0 | MiniGrid-DoorKey-8x8-v0 | MiniGrid-DoorKey-16x16-v0 |
 | ----- | ------------------------------ | ----------------------- | ----------------------- | ------------------------- |
