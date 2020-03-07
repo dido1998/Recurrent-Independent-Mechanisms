@@ -217,10 +217,10 @@ The model shown in the gif has been trained on the MiniGrid-Empty-5x5-V0 environ
 
  <div class="row">
   <div class="column">
-    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif" alt="Snow" style="width:50%">
+    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif" alt="Snow" width = "250">
   </div>
   <div class="column">
-    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5X5_LSTM.gif" alt="Forest" style="width:50%">
+    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5X5_LSTM.gif" alt="Forest" width = "250">
   </div>
 </div> 
 
