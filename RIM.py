@@ -37,7 +37,9 @@ class RIMCell(nn.Module):
 		num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100, comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1
 	):
 		super().__init__()
-		assert comm_value_size == hidden_size
+		if comm_value_size != hidden_size:
+			print('INFO: Changing communication value size to match hidden_size')
+			comm_value_size = hidden_size
 		self.device = device
 		self.hidden_size = hidden_size
 		self.num_units =num_units
@@ -192,36 +194,77 @@ class RIMCell(nn.Module):
 
 
 class RIM(nn.Module):
-	def __init__(self, device, input_size, hidden_size, num_units, k, rnn_cell, **kwargs):
+	def __init__(self, device, input_size, hidden_size, num_units, k, rnn_cell, n_layers, bidirectional, **kwargs):
 		super().__init__()
 		if device == 'cuda':
 			self.device = torch.device('cuda')
 		else:
 			self.device = torch.device('cpu')
+		self.n_layers = n_layers
+		self.num_directions = 2 if bidirectional else 1
 		self.rnn_cell = rnn_cell
 		self.num_units = num_units
 		self.hidden_size = hidden_size
-		self.rimcell = RIMCell(self.device, input_size, hidden_size, num_units, k, rnn_cell, **kwargs)
+		if self.num_directions == 2:
+			self.rimcell = nn.ModuleList([RIMCell(self.device, input_size, hidden_size, num_units, k, rnn_cell, **kwargs).to(self.device) if i < 2 else 
+				RIMCell(self.device, 2 * hidden_size * self.num_units, hidden_size, num_units, k, rnn_cell, **kwargs).to(self.device) for i in range(self.n_layers * self.num_directions)])
+		else:
+			self.rimcell = nn.ModuleList([RIMCell(self.device, input_size, hidden_size, num_units, k, rnn_cell, **kwargs).to(self.device) if i == 0 else
+			RIMCell(self.device, hidden_size * self.num_units, hidden_size, num_units, k, rnn_cell, **kwargs).to(self.device) for i in range(self.n_layers)])
 
-	def forward(self, x):
-		"""
-		Input: x (seq_len, batch_size, feature_size
-		Output: outputs (batch_size, seqlen, hidden_size * num_units)
-				h (batch_size, num_units, hidden_size)
-		"""
-		hs = torch.randn(x.size(1), self.num_units, self.hidden_size).to(self.device)
+	def layer(self, rim_layer, x, h, c = None, direction = 0):
+		batch_size = x.size(1)
+		xs = list(torch.split(x, 1, dim = 0))
+		if direction == 1: xs.reverse()
+		hs = h.squeeze(0).view(batch_size, self.num_units, -1)
 		cs = None
-		if self.rnn_cell == 'LSTM':
-			cs = torch.randn(x.size(1), self.num_units, self.hidden_size).to(self.device)
-
-		x = torch.transpose(x, 0, 1)
-		xs = torch.split(x, 1, 1)
+		if c is not None:
+			cs = c.squeeze(0).view(batch_size, self.num_units, -1)
 		outputs = []
 		for x in xs:
-			hs, cs = self.rimcell(x, hs, cs)
-			outputs.append(hs.view(x.size(0), -1))
-
+			x = x.squeeze(0)
+			hs, cs = rim_layer(x.unsqueeze(1), hs, cs)
+			outputs.append(hs.view(batch_size, -1))
+		if direction == 1: outputs.reverse()
 		outputs = torch.stack(outputs, dim = 0)
+		if c is not None:
+			return outputs, hs.view(batch_size, -1), cs.view(batch_size, -1)
+		else:
+			return outputs, hs.view(batch_size, -1)
+
+	def forward(self, x, h = None, c = None):
+		"""
+		Input: x (seq_len, batch_size, feature_size
+			   h (num_layers * num_directions, batch_size, hidden_size * num_units)
+			   c (num_layers * num_directions, batch_size, hidden_size * num_units)
+		Output: outputs (batch_size, seqlen, hidden_size * num_units * num-directions)
+				h(and c) (num_layer * num_directions, batch_size, hidden_size* num_units)
+		"""
+		hs = torch.split(h, 1, 0) if h is not None else torch.split(torch.randn(self.n_layers * self.num_directions, x.size(1), self.hidden_size * self.num_units).to(self.device), 1, 0)
+		hs = list(hs)
+		cs = None
 		if self.rnn_cell == 'LSTM':
-			return outputs, (hs.unsqueeze(0), cs.unsqueeze(0))
-		return outputs, hs.unsqueeze(0)
+			cs = torch.split(c, 1, 0) if c is not None else torch.split(torch.randn(self.n_layers * self.num_directions, x.size(1), self.hidden_size * self.num_units).to(self.device), 1, 0)
+			cs = list(cs)
+		for n in range(self.n_layers):
+			idx = n * self.num_directions
+			if cs is not None:
+				x_fw, hs[idx], cs[idx] = self.layer(self.rimcell[idx], x, hs[idx], cs[idx])
+			else:
+				x_fw, hs[idx] = self.layer(self.rimcell[idx], x, hs[idx], c = None)
+			if self.num_directions == 2:
+				idx = n * self.num_directions + 1
+				if cs is not None:
+					x_bw, hs[idx], cs[idx] = self.layer(self.rimcell[idx], x, hs[idx], cs[idx], direction = 1)
+				else:
+					x_bw, hs[idx] = self.layer(self.rimcell[idx], x, hs[idx], c = None, direction = 1)
+
+				x = torch.cat((x_fw, x_bw), dim = 2)
+			else:
+				x = x_fw
+
+		hs = torch.stack(hs, dim = 0)
+		if cs is not None:
+			cs = torch.stack(cs, dim = 0)
+			return x, hs, cs
+		return x, hs
