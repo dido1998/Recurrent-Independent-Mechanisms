@@ -16,7 +16,7 @@ The image below has been taken from the original [paper](https://arxiv.org/pdf/1
 </p>
 
 ## Setup
-* For using RIM as a standalone replpacement for LSTMs or GRUs
+* For using RIM as a standalone replacement for LSTMs or GRUs
    * Install PyTorch 1.2.0 from the [official website](https://pytorch.org/).
    * Install [numpy](https://numpy.org/) 1.18.0 using `pip install numpy==1.18.0`
    
