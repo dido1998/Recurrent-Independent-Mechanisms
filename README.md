@@ -215,15 +215,12 @@ The `--use_rim` flag has similar use as in evaluation.
 
 The model shown in the gif has been trained on the MiniGrid-Empty-5x5-V0 environment.
 
-<p align="center">
-  <img width="460" height="400" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif">
-</p>
  <div class="row">
   <div class="column">
-    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif" alt="Snow" style="width:100%">
+    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/16_16_RIM.gif" alt="Snow" style="width:50%">
   </div>
   <div class="column">
-    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5X5_LSTM.gif" alt="Forest" style="width:100%">
+    <img src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/5X5_LSTM.gif" alt="Forest" style="width:50%">
   </div>
 </div> 
 
