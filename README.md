@@ -149,7 +149,7 @@ bidirectional,
 | **n_layers** | Number of RIM layers |
 | **bidirectional** | `True` or `False` |
 
-The keyword arguents are same as `RIM.RIMCell`.
+The keyword arguments are same as `RIM.RIMCell`.
 
 #### Inputs
 | Input | Description |
