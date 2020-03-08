@@ -16,10 +16,11 @@ The image below has been taken from the original [paper](https://arxiv.org/pdf/1
 </p>
 
 ## Updates
-**8/3/2020 : Implemented `GroupLSTMCell` and `GroupGRUCell` which eliminate the need for using N `LSTM` or `GRU` Cells. Previously, the computation of the `LSTM` or `GRU` operation required looping over N cells. Now, the `GroupLSTMCell` and `GroupGRUCell` can compute the `LSTM` or `GRU` operation at once (parallely) without using a loop. This results in a speed-up of the RIM computation as shown below**
+**8/3/2020 : Implemented `GroupLSTMCell` and `GroupGRUCell` which eliminate the need for using Kt `LSTM` or `GRU` Cells. Previously, the computation of the `LSTM` or `GRU` operation required looping over Kt cells. Now, the `GroupLSTMCell` and `GroupGRUCell` can compute the `LSTM` or `GRU` operation at once (parallely) without using a loop. This results in a speed-up of the RIM computation as shown below**
 <p align="center">
-  <img width="560" height="300" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/time_comparison.png">
+  <img width="600" height="250" src="https://github.com/dido1998/Recurrent-Independent-Mechanisms/blob/master/README-RES/time_comparison.png">
 </p>
+
 **7/3/2020 : Added support for n-layered and bidirectional RIM similar to `nn.LSTM` and `nn.GRU`.**
 
 ## Setup
