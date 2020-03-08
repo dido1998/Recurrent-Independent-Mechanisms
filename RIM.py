@@ -3,6 +3,8 @@ import torch.nn as nn
 import math
 
 import numpy as np
+import torch.multiprocessing as mp
+
 
 class blocked_grad(torch.autograd.Function):
 
@@ -31,6 +33,80 @@ class GroupLinearLayer(nn.Module):
         return x.permute(1,0,2)
 
 
+class GroupLSTMCell(nn.Module):
+	def __init__(self, inp_size, hidden_size, num_lstms):
+		super().__init__()
+		self.inp_size = inp_size
+		self.hidden_size = hidden_size
+		
+		self.i2h = GroupLinearLayer(inp_size, 4 * hidden_size, num_lstms)
+		self.h2h = GroupLinearLayer(hidden_size, 4 * hidden_size, num_lstms)
+		self.reset_parameters()
+
+
+	def reset_parameters(self):
+		stdv = 1.0 / math.sqrt(self.hidden_size)
+		for weight in self.parameters():
+			weight.data.uniform_(-stdv, stdv)
+
+	def forward(self, x, hid_state):
+		h, c = hid_state
+		preact = self.i2h(x) + self.h2h(h)
+
+		gates = preact[:, :,  :3 * self.hidden_size].sigmoid()
+		g_t = preact[:, :,  3 * self.hidden_size:].tanh()
+		i_t = gates[:, :,  :self.hidden_size]
+		f_t = gates[:, :, self.hidden_size:2 * self.hidden_size]
+		o_t = gates[:, :, -self.hidden_size:]
+
+		c_t = torch.mul(c, f_t) + torch.mul(i_t, g_t) 
+		h_t = torch.mul(o_t, c_t.tanh())
+
+		return h_t, c_t
+
+
+class GroupGRUCell(nn.Module):
+
+    """
+    An implementation of GRUCell.
+
+    """
+
+    def __init__(self, input_size, hidden_size, num_grus):
+        super(GroupGRUCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.x2h = GroupLinearLayer(input_size, 3 * hidden_size, num_grus)
+        self.h2h = GroupLinearLayer(hidden_size, 3 * hidden_size, num_grus)
+        self.reset_parameters()
+
+
+
+    def reset_parameters(self):
+        std = 1.0 / math.sqrt(self.hidden_size)
+        for w in self.parameters():
+            w.data = torch.ones(w.data.size())#.uniform_(-std, std)
+    
+    def forward(self, x, hidden):
+        
+        
+        gate_x = self.x2h(x) 
+        gate_h = self.h2h(hidden)
+        
+        i_r, i_i, i_n = gate_x.chunk(3, 2)
+        h_r, h_i, h_n = gate_h.chunk(3, 2)
+        
+        
+        resetgate = torch.sigmoid(i_r + h_r)
+        inputgate = torch.sigmoid(i_i + h_i)
+        newgate = torch.tanh(i_n + (resetgate * h_n))
+        
+        hy = newgate + inputgate * (hidden - newgate)
+        
+        return hy
+
+
+
 class RIMCell(nn.Module):
 	def __init__(self, 
 		device, input_size, hidden_size, num_units, k, rnn_cell, input_key_size = 64, input_value_size = 400, input_query_size = 64,
@@ -38,7 +114,7 @@ class RIMCell(nn.Module):
 	):
 		super().__init__()
 		if comm_value_size != hidden_size:
-			print('INFO: Changing communication value size to match hidden_size')
+			#print('INFO: Changing communication value size to match hidden_size')
 			comm_value_size = hidden_size
 		self.device = device
 		self.hidden_size = hidden_size
@@ -60,10 +136,10 @@ class RIMCell(nn.Module):
 		self.value = nn.Linear(input_size, num_input_heads * input_value_size).to(self.device)
 
 		if self.rnn_cell == 'GRU':
-			self.rnn = nn.ModuleList([nn.GRUCell(input_value_size, hidden_size) for _ in range(num_units)])
+			self.rnn = GroupGRUCell(input_value_size, hidden_size, num_units)
 			self.query = GroupLinearLayer(hidden_size,  input_key_size * num_input_heads, self.num_units)
 		else:
-			self.rnn = nn.ModuleList([nn.LSTMCell(input_value_size, hidden_size) for _ in range(num_units)])
+			self.rnn = GroupLSTMCell(input_value_size, hidden_size, num_units)
 			self.query = GroupLinearLayer(hidden_size,  input_key_size * num_input_heads, self.num_units)
 		self.query_ =GroupLinearLayer(hidden_size, comm_query_size * num_comm_heads, self.num_units) 
 		self.key_ = GroupLinearLayer(hidden_size, comm_key_size * num_comm_heads, self.num_units)
@@ -106,7 +182,7 @@ class RIMCell(nn.Module):
 	    
 	    attention_probs = self.input_dropout(nn.Softmax(dim = -1)(attention_scores))
 	    inputs = torch.matmul(attention_probs, value_layer) * mask_.unsqueeze(2)
-	    inputs = torch.split(inputs, 1, 1)
+
 	    return inputs, mask_
 
 	def communication_attention(self, h, mask):
@@ -162,21 +238,14 @@ class RIMCell(nn.Module):
 		h_old = hs * 1.0
 		if cs is not None:
 			c_old = cs * 1.0
-		hs = list(torch.split(hs, 1,1))
-		if cs is not None:
-			cs = list(torch.split(cs, 1,1))
+		
 
 		# Compute RNN(LSTM or GRU) output
-		for i in range(self.num_units):
-			if cs is None:
-				hs[i] = self.rnn[i](inputs[i].squeeze(1), hs[i].squeeze(1))
-			else:
-
-				hs[i], cs[i] = self.rnn[i](inputs[i].squeeze(1), (hs[i].squeeze(1), cs[i].squeeze(1)))
-		hs = torch.stack(hs, dim = 1)
+		
 		if cs is not None:
-			cs = torch.stack(cs, dim = 1)
-
+			hs, cs = self.rnn(inputs, (hs, cs))
+		else:
+			hs = self.rnn(inputs, hs)
 
 		# Block gradient through inactive units
 		mask = mask.unsqueeze(2)
@@ -185,9 +254,9 @@ class RIMCell(nn.Module):
 		# Compute communication attention
 		h_new = self.communication_attention(h_new, mask.squeeze(2))
 
-		hs = mask * h_new + (1 - mask) * h_old
+		hs = mask * h_new #+ (1 - mask) * h_old
 		if cs is not None:
-			cs = mask * cs + (1 - mask) * c_old
+			cs = mask * cs #+ (1 - mask) * c_old
 			return hs, cs
 
 		return hs, None
@@ -224,9 +293,9 @@ class RIM(nn.Module):
 		for x in xs:
 			x = x.squeeze(0)
 			hs, cs = rim_layer(x.unsqueeze(1), hs, cs)
-			outputs.append(hs.view(batch_size, -1))
+			outputs.append(hs.view(1, batch_size, -1))
 		if direction == 1: outputs.reverse()
-		outputs = torch.stack(outputs, dim = 0)
+		outputs = torch.cat(outputs, dim = 0)
 		if c is not None:
 			return outputs, hs.view(batch_size, -1), cs.view(batch_size, -1)
 		else:
@@ -240,6 +309,7 @@ class RIM(nn.Module):
 		Output: outputs (batch_size, seqlen, hidden_size * num_units * num-directions)
 				h(and c) (num_layer * num_directions, batch_size, hidden_size* num_units)
 		"""
+
 		hs = torch.split(h, 1, 0) if h is not None else torch.split(torch.randn(self.n_layers * self.num_directions, x.size(1), self.hidden_size * self.num_units).to(self.device), 1, 0)
 		hs = list(hs)
 		cs = None
@@ -262,7 +332,6 @@ class RIM(nn.Module):
 				x = torch.cat((x_fw, x_bw), dim = 2)
 			else:
 				x = x_fw
-
 		hs = torch.stack(hs, dim = 0)
 		if cs is not None:
 			cs = torch.stack(cs, dim = 0)
