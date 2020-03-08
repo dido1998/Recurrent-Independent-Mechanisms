@@ -16,7 +16,7 @@ The image below has been taken from the original [paper](https://arxiv.org/pdf/1
 </p>
 
 ## Updates
-**7/3/2019 : Added support for n-layered and bidirectional RIM similar to `nn.LSTM` and `nn.GRU`.**
+**7/3/2020 : Added support for n-layered and bidirectional RIM similar to `nn.LSTM` and `nn.GRU`.**
 
 ## Setup
 * For using RIM as a standalone replacement for LSTMs or GRUs
