@@ -75,9 +75,9 @@ class GroupLSTMCell(nn.Module):
 
 
 class GroupGRUCell(nn.Module):
-	"""
-	GroupGRUCell can compute the operation of N GRU Cells at once.
-	"""
+    """
+    GroupGRUCell can compute the operation of N GRU Cells at once.
+    """
     def __init__(self, input_size, hidden_size, num_grus):
         super(GroupGRUCell, self).__init__()
         self.input_size = input_size
