@@ -34,6 +34,9 @@ class GroupLinearLayer(nn.Module):
 
 
 class GroupLSTMCell(nn.Module):
+	"""
+	GroupLSTMCell can compute the operation of N LSTM Cells at once.
+	"""
 	def __init__(self, inp_size, hidden_size, num_lstms):
 		super().__init__()
 		self.inp_size = inp_size
@@ -50,6 +53,12 @@ class GroupLSTMCell(nn.Module):
 			weight.data.uniform_(-stdv, stdv)
 
 	def forward(self, x, hid_state):
+		"""
+		input: x (batch_size, num_lstms, input_size)
+			   hid_state (tuple of length 2 with each element of size (batch_size, num_lstms, hidden_state))
+		output: h (batch_size, num_lstms, hidden_state)
+				c ((batch_size, num_lstms, hidden_state))
+		"""
 		h, c = hid_state
 		preact = self.i2h(x) + self.h2h(h)
 
@@ -66,12 +75,9 @@ class GroupLSTMCell(nn.Module):
 
 
 class GroupGRUCell(nn.Module):
-
-    """
-    An implementation of GRUCell.
-
-    """
-
+	"""
+	GroupGRUCell can compute the operation of N GRU Cells at once.
+	"""
     def __init__(self, input_size, hidden_size, num_grus):
         super(GroupGRUCell, self).__init__()
         self.input_size = input_size
@@ -88,8 +94,11 @@ class GroupGRUCell(nn.Module):
             w.data = torch.ones(w.data.size())#.uniform_(-std, std)
     
     def forward(self, x, hidden):
-        
-        
+        """
+		input: x (batch_size, num_grus, input_size)
+			   hidden (batch_size, num_grus, hidden_size)
+		output: hidden (batch_size, num_grus, hidden_size)
+        """
         gate_x = self.x2h(x) 
         gate_h = self.h2h(hidden)
         
@@ -254,9 +263,9 @@ class RIMCell(nn.Module):
 		# Compute communication attention
 		h_new = self.communication_attention(h_new, mask.squeeze(2))
 
-		hs = mask * h_new #+ (1 - mask) * h_old
+		hs = mask * h_new + (1 - mask) * h_old
 		if cs is not None:
-			cs = mask * cs #+ (1 - mask) * c_old
+			cs = mask * cs + (1 - mask) * c_old
 			return hs, cs
 
 		return hs, None
