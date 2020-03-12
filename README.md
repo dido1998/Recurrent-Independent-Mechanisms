@@ -53,8 +53,9 @@ A single RIM cell similar to `nn.LSTMCell` or `nn.GRUCell`.
 Class RIM.RIMCell(device,
 input_size,
 hidden_size,
-num_units = 6,
-rnn_cell = 'LSTM',
+num_units,
+k,
+rnn_cell,
 input_key_size = 64,
 input_value_size = 400,
 input_query_size = 64,
@@ -64,8 +65,8 @@ comm_key_size = 32,
 comm_value_size = 100,
 comm_query_size = 32,
 num_comm_heads = 4,
-comm_dropout = 0.1,
-k = 4)
+comm_dropout = 0.1
+)
 ```
 For description of the RIMCell please check the paper.
 
@@ -76,6 +77,7 @@ For description of the RIMCell please check the paper.
 | **input_size** | The number of expected input features. |
 | **hidden_size** | The number of hidden features in each unit. |
 | **num_units** | Number of total RIM units. |
+| **k** | Number of active RIMs at every time-step. |
 | **rnn_cell** | `'LSTM'` or `'GRU'` |
 | **input_key_size** | Number of features in the input key. |
 | **input_value_size** | Number of features in the input value. |
@@ -87,7 +89,7 @@ For description of the RIMCell please check the paper.
 | **comm_query_size** | Number of features in the communication query. |
 | **num_comm_heads** | Number of communication attention heads. |
 | **comm_dropout** | Dropout applied to the communication attention probabilities. |
-| **k** | Number of active RIMs at every time-step. |
+
 
 #### Inputs
 | Input | Description |
