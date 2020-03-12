@@ -260,7 +260,7 @@ The models shown in the gif have been trained on the MiniGrid-DoorKey-5x5-V0 env
 | RIM (Kt = 4, Ka = 2) | 0.85 | 0.62 | 0.29 | 0.13 |
 | LSTM | 0.90 | 0.63 | 0.35 | 0.12 |
 
-**Insight**: Task 2 and Task 3 demonstrate the importance of the hyper-parameter Ka (number of active modules per timestep). We can see that reducing Ka from 3 to 2 drastically reduces performance especially in task 2. We also that the RIM with Ka = 2 is the best performing model for task 1 but task 1 is a comparitively simple task and we need 3 active RIMs for complex tasks. It would be interesting to see what causes each RIM to activate in each environment. 
+**Insight**: Task 2 and Task 3 demonstrate the importance of the hyper-parameter Ka (number of active modules per timestep). We can see that reducing Ka from 3 to 2 drastically reduces performance especially in task 2. We also see that the RIM with Ka = 2 is the best performing model for task 1 but task 1 is a comparitively simple task. It would be interesting to see what causes each RIM to activate in each environment. 
 
 
 
