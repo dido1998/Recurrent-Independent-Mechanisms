@@ -110,10 +110,11 @@ from RIM import RIMCell
 timesteps = 50
 batch_size = 32
 num_units = 6
+k = 4
 input_size = 32
 hidden_size = 64
 # Model definition. The definition of each argument is same as above.
-rim_model = RIM(torch.device('cuda'), input_size, hidden_size, 'LSTM')
+rim_model = RIMCell(torch.device('cuda'), input_size, hidden_size, num_units, k, 'LSTM')
 
 # creating hidden states and cell states
 hs = torch.randn(batch_size, num_units, hidden_size)
