@@ -46,7 +46,7 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         # Define memory
         if self.use_memory:
             if use_rim:
-                self.memory_rnn = RIMCell(torch.device('cuda'), self.image_embedding_size, self.semi_memory_size // NUM_UNITS, NUM_UNITS, 'LSTM', input_value_size = 64, comm_value_size = self.semi_memory_size // NUM_UNITS, k = 2 )
+                self.memory_rnn = RIMCell(torch.device('cuda'), self.image_embedding_size, self.semi_memory_size // NUM_UNITS, NUM_UNITS, k, 'LSTM', input_value_size = 64, comm_value_size = self.semi_memory_size // NUM_UNITS)
             else:
                 self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
 
