@@ -189,7 +189,7 @@ class RIMCell(nn.Module):
 
 	    mask_[row_index, topk1.indices.view(-1)] = 1
 	    
-	    attention_probs = self.input_dropout(nn.Softmax(dim = -1)(attention_scores))
+	    attention_probs = self.input_dropout(nn.Softmax(dim = 1)(attention_scores))
 	    inputs = torch.matmul(attention_probs, value_layer) * mask_.unsqueeze(2)
 
 	    return inputs, mask_
