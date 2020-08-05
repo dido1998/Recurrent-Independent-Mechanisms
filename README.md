@@ -169,7 +169,7 @@ The keyword arguments are same as `RIM.RIMCell`.
 #### Outputs
 | Output | Description |
 | ------ | ----------- |
-| **output** | Output of shape (*seq_len, batch_size, num_directions * hidden_size*) |
+| **output** | Output of shape (*seq_len, batch_size, num_directions * hidden_size * num_units*) |
 | **hs** | Hidden state of shape (*num_directions * num_layers, batch_size, hidden_size * num_units*) |
 | **cs** | Returned if `rnn_cell == LSTM`. Cell state of shape same as **hs**. | 
 
