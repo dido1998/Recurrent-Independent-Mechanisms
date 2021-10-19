@@ -14,7 +14,7 @@ rim_model = RIMCell(torch.device('cpu'), input_size, hidden_size, num_units, k, 
 # creating hidden states and cell states
 hs = torch.randn(batch_size, num_units, hidden_size)
 cs = torch.randn(batch_size, num_units, hidden_size)
- 
+    
 # Creating Input
 xs = torch.randn(batch_size, timesteps, input_size)
 xs = torch.split(xs, 1, 1)
