@@ -16,9 +16,10 @@ parser = argparse.ArgumentParser()
 
 ## General parameters
 parser.add_argument("--algo", required=True,
-                    help="algorithm to use: a2c | ppo (REQUIRED)")
+                    help="algorithm to use: a2c | ppo (REQUIRED)", default='a2c')
 parser.add_argument("--env", required=True,
-                    help="name of the environment to train on (REQUIRED)")
+                    help="name of the environment to train on (REQUIRED)", 
+                    default='MiniGrid-Empty-8x8-v0') # env for gym-minigrid
 parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{ALGO}_{TIME})")
 parser.add_argument("--seed", type=int, default=1,
@@ -37,7 +38,7 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size for PPO (default: 256)")
-parser.add_argument("--frames-per-proc", type=int, default=128,
+parser.add_argument("--frames-per-proc", type=int, default=5,
                     help="number of frames per process before update (default: 5 for A2C and 128 for PPO)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
@@ -57,7 +58,7 @@ parser.add_argument("--optim-alpha", type=float, default=0.99,
                     help="RMSprop optimizer alpha (default: 0.99)")
 parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
-parser.add_argument("--recurrence", type=int, default=32,
+parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--text", action="store_true", default=False,
                     help="add a GRU to the model to handle text input")
@@ -211,3 +212,7 @@ while num_frames < args.frames:
             status["vocab"] = preprocess_obss.vocab.vocab
         utils.save_status(status, model_dir)
         txt_logger.info("Status saved")
+
+if __name__ == '__main__':
+    torch.multiprocessing.freeze_support()
+    print('looop')

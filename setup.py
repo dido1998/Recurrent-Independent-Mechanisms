@@ -5,6 +5,9 @@ from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
 
+## conda activate rim
+## pip install -e PATH
+
 # Package meta-data.
 NAME = 'RIM'
 DESCRIPTION = 'Implementation of RIM in PyTorch'

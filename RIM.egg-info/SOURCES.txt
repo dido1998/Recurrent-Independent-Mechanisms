@@ -1,0 +1,9 @@
+README.md
+RIM.py
+setup.py
+RIM.egg-info/PKG-INFO
+RIM.egg-info/SOURCES.txt
+RIM.egg-info/dependency_links.txt
+RIM.egg-info/entry_points.txt
+RIM.egg-info/requires.txt
+RIM.egg-info/top_level.txt

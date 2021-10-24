@@ -2,7 +2,7 @@ import torch
 import struct
 import numpy as np
 import gzip
-import cv2
+# import cv2
 
 def read_idx(filename):
     with gzip.open(filename, 'rb') as f:
@@ -38,7 +38,7 @@ class MnistData:
 			img = self.train_data[i, :]
 			img = cv2.resize(img, size, interpolation = cv2.INTER_NEAREST)
 
-			_, img = cv2.threshold(img, 120, 255, cv2.THRESH_BINARY) 
+			_, img = cv2.threshold(img, 120, 255, cv2.THRESH_BINARY) #necesssary? maybe not
 
 			
 			
@@ -103,4 +103,8 @@ class MnistData:
 
 
 
+
+if __name__ == '__main__':
+	mnistdata = MnistData(128, (128,128), 10)
+	print(a.shape)
 

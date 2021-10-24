@@ -1,0 +1,14 @@
+{
+    "configurations": [
+
+        {
+            "name": "for main.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args":["--cuda","False",
+                "--epochs","1","--batch-size","64"]
+        }
+    ]
+}
