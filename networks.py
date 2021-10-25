@@ -19,7 +19,7 @@ class MnistModel(nn.Module):
 		self.Loss = nn.CrossEntropyLoss()
 
 	def to_device(self, x):
-		return torch.from_numpy(x).to(self.device)
+		return torch.from_numpy(x).to(self.device) if type(x) is not torch.Tensor else x.to(self.device)
 
 	def forward(self, x, y = None):
 		x = x.float()

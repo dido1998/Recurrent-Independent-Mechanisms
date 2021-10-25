@@ -1,6 +1,29 @@
 {
     "configurations": [
         {
+            "name": "main: RIM (cuda)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--cuda",
+                "True",
+                "--epochs",
+                "1",
+                "--batch_size",
+                "64",
+                "--input_size",
+                "10",
+                "--size",
+                "14",
+                "--loadsaved",
+                "0",
+                "--model",
+                "RIM"
+            ]
+        },
+        {
             "name": "main: LSTM",
             "type": "python",
             "request": "launch",
