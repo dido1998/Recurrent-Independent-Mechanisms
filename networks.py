@@ -30,10 +30,11 @@ class MnistModel(nn.Module):
 		if self.args['rnn_cell'] == 'LSTM':
 			cs = torch.randn(x.size(0), self.args['num_units'], self.args['hidden_size']).to(self.device)
 
-		xs = torch.split(x, 1, 1)
+		x = x.reshape((x.shape[0],-1))
+		xs = torch.split(x, self.args["input_size"], 1)
 
 		# pass through RIMCell for all timesteps
-		for x in xs:
+		for x in xs[:-1]:
 			hs, cs = self.rim_model(x, hs, cs)
 		preds = self.Linear(hs.contiguous().view(x.size(0), -1))
 

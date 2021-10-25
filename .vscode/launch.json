@@ -1,16 +1,50 @@
 {
     "configurations": [
-
         {
-            "name": "for main.py",
+            "name": "main: LSTM",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args":["--cuda","False",
-                "--epochs","1","--batch_size","64",
-                "--input_size","1","--size","14",
-                "--loadsaved","1"]
+            "args": [
+                "--cuda",
+                "False",
+                "--epochs",
+                "1",
+                "--batch_size",
+                "64",
+                "--input_size",
+                "1",
+                "--size",
+                "14",
+                "--loadsaved",
+                "0",
+                "--model",
+                "LSTM"
+            ]
+        },
+        {
+            "name": "main: RIM",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--cuda",
+                "False",
+                "--epochs",
+                "1",
+                "--batch_size",
+                "64",
+                "--input_size",
+                "10",
+                "--size",
+                "14",
+                "--loadsaved",
+                "0",
+                "--model",
+                "RIM"
+            ]
         }
     ]
 }

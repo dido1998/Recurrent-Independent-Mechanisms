@@ -1,6 +1,6 @@
 import torch
 # from data_nocv2 import MnistData
-from data_new import MnistSet
+from data_new import MnistSet, Compose, ToVector
 from torch.utils.data import DataLoader
 from networks import MnistModel, LSTM
 from tqdm import tqdm
@@ -58,10 +58,17 @@ if args['model'] == 'LSTM':
 else:
 	mode = MnistModel
 
-def resize_func(size):
-	trans = tv.transforms.Resize(size,
-		interpolation=tv.transforms.InterpolationMode.NEAREST)
-	return trans
+train_trans = Compose([
+	tv.transforms.Resize((args['size'],args['size']),
+		interpolation=tv.transforms.InterpolationMode.NEAREST),
+	ToVector()
+])
+val1_trans = train_trans = Compose([
+	tv.transforms.Resize((args['size']+10,args['size']+10),
+		interpolation=tv.transforms.InterpolationMode.NEAREST),
+	ToVector()
+])
+
 
 def test_model(model, val_data):
 	accuracy = 0
@@ -152,22 +159,22 @@ def train_model(model, epochs, train_data, val_data):
 			pickle.dump(acc,f)
 
 def main():
-	train_trans = resize_func((args['size'], args['size']))
-	val1_trans = resize_func((args['size']+10, args['size']+10))
-	val2_trans = resize_func((args['size']+5, args['size']+5))
-	val3_trans = resize_func((args['size']+2, args['size']+2))
+	# train_trans = resize_func((args['size'], args['size']))
+	# val1_trans = resize_func((args['size']+10, args['size']+10))
+	# val2_trans = resize_func((args['size']+5, args['size']+5))
+	# val3_trans = resize_func((args['size']+2, args['size']+2))
 	train_set = MnistSet(img_dir='mnist/train-images-idx3-ubyte.gz',
 		anno_dir='mnist/train-labels-idx1-ubyte.gz',
 		transform=train_trans)
 	val1_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
 		'mnist/t10k-labels-idx1-ubyte.gz',
 		val1_trans)
-	val2_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
-		'mnist/t10k-labels-idx1-ubyte.gz',
-		val2_trans)
-	val3_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
-		'mnist/t10k-labels-idx1-ubyte.gz',
-		val3_trans)
+	# val2_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
+	# 	'mnist/t10k-labels-idx1-ubyte.gz',
+	# 	val2_trans)
+	# val3_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
+	# 	'mnist/t10k-labels-idx1-ubyte.gz',
+	# 	val3_trans)
 	train_loader = DataLoader(train_set, batch_size=args['batch_size'], 
 		shuffle=True, drop_last=False, num_workers=2)
 	val1_loader = DataLoader(val1_set, batch_size=args['batch_size'], 

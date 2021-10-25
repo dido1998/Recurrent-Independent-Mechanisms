@@ -170,7 +170,7 @@ class RIMCell(nn.Module):
 	    Output: inputs (list of size num_units with each element of shape (batch_size, input_value_size))
 	    		mask_ binary array of shape (batch_size, num_units) where 1 indicates active and 0 indicates inactive
 		"""
-	    key_layer = self.key(x)
+	    key_layer = self.key(x) # input size 1 or fullsize??
 	    value_layer = self.value(x)
 	    query_layer = self.query(h)
 
@@ -239,8 +239,8 @@ class RIMCell(nn.Module):
 				new hs for GRU
 		"""
 		size = x.size()
-		null_input = torch.zeros(size[0], 1, size[2]).float().to(self.device)
-		x = torch.cat((x, null_input), dim = 1)
+		null_input = torch.zeros(size[0], 1, size[1]).float().to(self.device)
+		x = torch.cat((x.unsqueeze(1), null_input), dim = 1)
 
 		# Compute input attention
 		inputs, mask = self.input_attention_mask(x, hs)
