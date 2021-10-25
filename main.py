@@ -1,10 +1,13 @@
 import torch
-from data import MnistData
+# from data_nocv2 import MnistData
+from data_new import MnistSet
+from torch.utils.data import DataLoader
 from networks import MnistModel, LSTM
 from tqdm import tqdm
 import pickle
 import argparse
 import numpy as np
+import torchvision as tv
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -55,20 +58,21 @@ if args['model'] == 'LSTM':
 else:
 	mode = MnistModel
 
+def resize_func(size):
+	trans = tv.transforms.Resize(size,
+		interpolation=tv.transforms.InterpolationMode.NEAREST)
+	return trans
 
-
-def test_model(model, loader, func):
-	
+def test_model(model, val_data):
 	accuracy = 0
 	loss = 0
 	model.eval()
 	with torch.no_grad():
-		for i in tqdm(range(loader.val_len())):
-			test_x, test_y = func(i)
-			test_x = model.to_device(test_x)
-			test_y = model.to_device(test_y).long()
+		for imgs, labels in tqdm(val_data):
+			test_x = model.to_device(imgs)
+			test_y = model.to_device(labels).long()
 			
-			probs  = model( test_x)
+			probs  = model(test_x)
 
 			preds = torch.argmax(probs, dim=1)
 			correct = preds == test_y
@@ -77,7 +81,7 @@ def test_model(model, loader, func):
 	accuracy /= 100.0
 	return accuracy
 
-def train_model(model, epochs, data):
+def train_model(model, epochs, train_data, val_data):
 	acc=[]
 	lossstats=[]
 	best_acc = 0.0
@@ -102,38 +106,34 @@ def train_model(model, epochs, data):
 	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
 		
 	for epoch in range(start_epoch,epochs):
-		
 		print('epoch ' + str(epoch + 1))
 		epoch_loss = 0.
 		iter_ctr = 0.
 		t_accuracy = 0
 		norm = 0
 		model.train()
-		for i in tqdm(range(data.train_len())):
+		for imgs, labels in tqdm(train_data):
 			iter_ctr+=1.
-			inp_x, inp_y = data.train_get(i)
-			inp_x = model.to_device(inp_x)
-			inp_y = model.to_device(inp_y)
 			
-			output, l = model(inp_x, inp_y)
+			output, l = model(imgs, labels)
 			
 			optimizer.zero_grad()
 			l.backward()
 			optimizer.step()
 			norm += model.grad_norm()
-			epoch_loss += l.item()
-			preds = torch.argmax(output, dim=1)
+			epoch_loss += l.item() # l is type?
+			preds = torch.argmax(output, dim=1) # could be wrong
 			
-			correct = preds == inp_y.long()
+			correct = preds == labels.long()
 			t_accuracy += correct.sum().item()
 
 			ctr += 1
 
-		v_accuracy1 = test_model(model, data, data.val_get1)
-		v_accuracy2 = test_model(model, data, data.val_get2)
-		v_accuracy3 = test_model(model, data, data.val_get3)
+		v_accuracy = test_model(model, val_data) # not yet revised
+		# v_accuracy2 = test_model(model, val_data, data.val_get2)
+		# v_accuracy3 = test_model(model, val_data, data.val_get3)
 		
-		print('best validation accuracy ' + str(best_acc))
+		print('previous best validation accuracy ' + str(best_acc))
 		print('Saving best model..')
 		state = {
 	       'net': model.state_dict(),	
@@ -143,24 +143,49 @@ def train_model(model, epochs, data):
 	    }
 		with open(log_dir + '/best_model.pt', 'wb') as f:
 			torch.save(state, f)
-		print('epoch_loss: {}, val accuracy1: {}, val_accuracy2:{}, val_accuracy3:{}, train_acc: {}, grad_norm: {} '.format(epoch_loss/(iter_ctr), v_accuracy1, v_accuracy2, v_accuracy3, t_accuracy / 600, norm/iter_ctr))
+		print('epoch_loss: {}, val accuracy: {}, train_acc: {}, grad_norm: {} '.format(epoch_loss/(iter_ctr), v_accuracy, t_accuracy / 600, norm/iter_ctr))
 		lossstats.append((ctr,epoch_loss/iter_ctr))
-		acc.append((epoch,(v_accuracy1, v_accuracy2, v_accuracy3)))
+		acc.append((epoch,(v_accuracy)))
 		with open(log_dir+'/lossstats.pickle','wb') as f:
 			pickle.dump(lossstats,f)
 		with open(log_dir+'/accstats.pickle','wb') as f:
 			pickle.dump(acc,f)
 
-data = MnistData(args['batch_size'], (args['size'], args['size']), args['k'])
-model = mode(args).cuda()
+def main():
+	train_trans = resize_func((args['size'], args['size']))
+	val1_trans = resize_func((args['size']+10, args['size']+10))
+	val2_trans = resize_func((args['size']+5, args['size']+5))
+	val3_trans = resize_func((args['size']+2, args['size']+2))
+	train_set = MnistSet(img_dir='mnist/train-images-idx3-ubyte.gz',
+		anno_dir='mnist/train-labels-idx1-ubyte.gz',
+		transform=train_trans)
+	val1_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
+		'mnist/t10k-labels-idx1-ubyte.gz',
+		val1_trans)
+	val2_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
+		'mnist/t10k-labels-idx1-ubyte.gz',
+		val2_trans)
+	val3_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
+		'mnist/t10k-labels-idx1-ubyte.gz',
+		val3_trans)
+	train_loader = DataLoader(train_set, batch_size=args['batch_size'], 
+		shuffle=True, drop_last=False, num_workers=2)
+	val1_loader = DataLoader(val1_set, batch_size=args['batch_size'], 
+		shuffle=True, drop_last=False, num_workers=2)
+	
+	# data = MnistSet(args['batch_size'], (args['size'], args['size']), args['k'])
+	model = mode(args).cuda() if torch.cuda.is_available() else mode(args)
 
-if args['train']:
-	train_model(model, args['epochs'], data)
-else:
-	saved = torch.load(log_dir + '/best_model.pt')
-	model.load_state_dict(saved['net'])
-	v_acc = test_model(model, data)
-	print('val_acc:'+str(v_acc))
+	if args['train']:
+		train_model(model, args['epochs'], train_loader, val1_loader)
+	else:
+		saved = torch.load(log_dir + '/best_model.pt')
+		model.load_state_dict(saved['net'])
+		v_acc = test_model(model, val1_loader)
+		print('val_acc:'+str(v_acc))
+
+if __name__ == "__main__":
+	main()
 
 
 

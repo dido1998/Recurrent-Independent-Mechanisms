@@ -8,7 +8,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args":["--cuda","False",
-                "--epochs","1","--batch-size","64"]
+                "--epochs","1","--batch_size","64",
+                "--input_size","1","--size","14",
+                "--loadsaved","1"]
         }
     ]
 }

@@ -39,8 +39,8 @@ class MnistData:
 		val_data_2 = torch.zeros((self.val_data.shape[0], (size[0] + 5) * (size[1] + 5)))
 		val_data_3 = torch.zeros((self.val_data.shape[0], (size[0] + 2) * (size[1] + 2)))
 
-		self.transforms = transforms.Compose(
-			transforms.Resize(size,interpolation=transforms.InterpolationMode.NEAREST)
+		self.transforms = transforms.Compose([
+			transforms.Resize(size,interpolation=transforms.InterpolationMode.NEAREST)]
 			# skipped thresholding. think it's not nodig. 
 		)
 		
@@ -56,25 +56,13 @@ class MnistData:
 		# 	_train_data[i] = img
 
 		_train_data = self.transforms(self.train_data)
-
-		for i in range(self.val_data.shape[0]):
-			img = self.val_data[i, :]
-			img1 = cv2.resize(img, (size[0] + 10, size[1] + 10), interpolation = cv2.INTER_NEAREST)
-			_, img1 = cv2.threshold(img1, 120, 255, cv2.THRESH_BINARY) 
-			img1 = np.reshape(img1, (-1))
-			val_data_1[i, :] = img1
-
-			img2 = cv2.resize(img, (size[0] + 5, size[1] + 5), interpolation = cv2.INTER_NEAREST)
-			_, img2 = cv2.threshold(img2, 120, 255, cv2.THRESH_BINARY) 
-			img2 = np.reshape(img2, (-1))
-			val_data_2[i, :] = img2
-
-			img3 = cv2.resize(img, (size[0] + 2, size[1] + 2), interpolation = cv2.INTER_NEAREST)
-			_, img3 = cv2.threshold(img3, 120, 255, cv2.THRESH_BINARY) 
-			img3 = np.reshape(img3, (-1))
-			val_data_3[i, :] = img3
-
-			
+		val_data_1 = transforms.Resize((size[0]+10,size[1]+10),
+			interpolation=transforms.InterpolationMode.NEAREST)(self.val_data)
+		val_data_2 = transforms.Resize((size[0]+5,size[1]+5),
+			interpolation=transforms.InterpolationMode.NEAREST)(self.val_data)
+		val_data_3 = transforms.Resize((size[0]+2,size[1]+2),
+			interpolation=transforms.InterpolationMode.NEAREST)(self.val_data)
+		
 		self.train_data = _train_data
 		self.val_data1 = val_data_1
 		self.val_data2 = val_data_2
@@ -82,17 +70,21 @@ class MnistData:
 
 		del _train_data
 
-		self.train_data = np.reshape(self.train_data, (self.train_data.shape[0], self.train_data.shape[1], 1))
-		self.val_data1 = np.reshape(self.val_data1, (self.val_data1.shape[0], self.val_data1.shape[1], 1))
-		self.val_data2 = np.reshape(self.val_data2, (self.val_data2.shape[0], self.val_data2.shape[1], 1))
-		self.val_data3 = np.reshape(self.val_data3, (self.val_data3.shape[0], self.val_data3.shape[1], 1))
+		self.train_labels = self.train_labels.unsqueeze(1)
+		self.val_labels = self.val_labels.unsqueeze(1)
 
-		self.train_data = [self.train_data[i:i + batch_size] for i in range(0, self.train_data.shape[0], batch_size)]
-		self.val_data1 = [self.val_data1[i:i + 512] for i in range(0, self.val_data1.shape[0], 512)]
-		self.val_data2 = [self.val_data2[i:i + 512] for i in range(0, self.val_data2.shape[0], 512)]
-		self.val_data3 = [self.val_data3[i:i + 512] for i in range(0, self.val_data3.shape[0], 512)]
-		self.train_labels = [self.train_labels[i:i + batch_size] for i in range(0, self.train_labels.shape[0], batch_size)]
-		self.val_labels = [self.val_labels[i:i + 512] for i in range(0, self.val_labels.shape[0], 512)]
+		# -- Questionable -- 
+		# self.train_data = self.train_data.unsqueeze(3) #unsqueeze?
+		# self.val_data1 = self.val_data1.unsqueeze(3)
+		# self.val_data2 = self.val_data2.unsqueeze(3)
+		# self.val_data3 = self.val_data3.unsqueeze(3)
+
+		# self.train_data = [self.train_data[i:i + batch_size] for i in range(0, self.train_data.shape[0], batch_size)]
+		# self.val_data1 = [self.val_data1[i:i + 512] for i in range(0, self.val_data1.shape[0], 512)]
+		# self.val_data2 = [self.val_data2[i:i + 512] for i in range(0, self.val_data2.shape[0], 512)]
+		# self.val_data3 = [self.val_data3[i:i + 512] for i in range(0, self.val_data3.shape[0], 512)]
+		# self.train_labels = [self.train_labels[i:i + batch_size] for i in range(0, self.train_labels.shape[0], batch_size)]
+		# self.val_labels = [self.val_labels[i:i + 512] for i in range(0, self.val_labels.shape[0], 512)]
 
 	def train_len(self):
 		return len(self.train_labels)
@@ -101,7 +93,7 @@ class MnistData:
 		return len(self.val_labels)
 
 	def train_get(self, i):
-		return self.train_data[i], self.train_labels[i]
+		return self.train_data[i], self.train_labels[i] ## batch????
 
 	def val_get1(self, i):
 		return self.val_data1[i], self.val_labels[i]
@@ -115,6 +107,6 @@ class MnistData:
 
 if __name__ == '__main__':
 	mnistdata = MnistData(128, (128,128), 10)
-	print(a.shape)
+	print(mnistdata.train_labels.shape)
 
 

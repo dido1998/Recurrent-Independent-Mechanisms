@@ -71,16 +71,17 @@ class LSTM(nn.Module):
 		#self.optimizer = torch.optim.Adam(self.parameters(), lr = 0.0001)
 
 	def to_device(self, x):
-		return torch.from_numpy(x).to(self.device)
+		return x.to(self.device)
 
 	def forward(self, x, y = None):
 		x = x.float()
 		hs = torch.randn(x.size(0), self.hidden_size).to(self.device)
 		cs = torch.randn(x.size(0), self.hidden_size).to(self.device) 
+		x = x.reshape((x.shape[0],-1))
 		xs = torch.split(x, 1, 1)
 		for x in xs:
-			x_ = torch.squeeze(x, dim = 1)
-			hs, cs = self.lstm(x_, (hs, cs))
+			# x_ = torch.squeeze(x, dim = 1)
+			hs, cs = self.lstm(x, (hs, cs))
 		preds = self.Linear(hs)
 		if y is not None:
 			y = y.long()
