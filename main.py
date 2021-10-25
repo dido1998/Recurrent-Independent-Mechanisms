@@ -112,7 +112,7 @@ def train_model(model, epochs, train_data, val_data):
 			if i[0]>best_acc:
 				best_acc=i[0]
 		ctr=len(losslist)-1
-		saved = torch.load(log_dir + '/best_model.pt')
+		saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt')
 		model.load_state_dict(saved['net'])
 	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
 		
@@ -184,7 +184,7 @@ def main():
 	# 	'mnist/t10k-labels-idx1-ubyte.gz',
 	# 	val3_trans)
 	train_loader = DataLoader(train_set, batch_size=args['batch_size'], 
-		shuffle=True, drop_last=False, num_workers=2)
+		shuffle=True, drop_last=False, num_workers=2, pin_memory=True)
 	val1_loader = DataLoader(val1_set, batch_size=args['batch_size'], 
 		shuffle=True, drop_last=False, num_workers=2)
 	
