@@ -76,6 +76,10 @@ def test_model(model, val_data):
 	model.eval()
 	with torch.no_grad():
 		for imgs, labels in tqdm(val_data):
+			if args["cuda"]:
+				imgs = imgs.to(torch.device('cuda'))
+				labels = labels.to(torch.device('cuda'))
+
 			test_x = model.to_device(imgs)
 			test_y = model.to_device(labels).long()
 			
@@ -120,6 +124,10 @@ def train_model(model, epochs, train_data, val_data):
 		norm = 0
 		model.train()
 		for imgs, labels in tqdm(train_data):
+			if args["cuda"]:
+				imgs = imgs.to(torch.device('cuda'))
+				labels = labels.to(torch.device('cuda'))
+
 			iter_ctr+=1.
 			
 			output, l = model(imgs, labels)
@@ -181,7 +189,8 @@ def main():
 		shuffle=True, drop_last=False, num_workers=2)
 	
 	# data = MnistSet(args['batch_size'], (args['size'], args['size']), args['k'])
-	model = mode(args).cuda() if torch.cuda.is_available() else mode(args)
+	# model = mode(args).cuda() if torch.cuda.is_available() else mode(args)
+	model = mode(args).cuda() if args["cuda"] else mode(args)
 
 	if args['train']:
 		train_model(model, args['epochs'], train_loader, val1_loader)
