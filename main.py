@@ -46,6 +46,7 @@ parser.add_argument('--k', type = int, default = 4)
 parser.add_argument('--size', type = int, default = 14)
 parser.add_argument('--loadsaved', type = int, default = 0)
 parser.add_argument('--log_dir', type = str, default = 'smnist_lstm_600')
+parser.add_argument('--loadbest', type = int, default = 0)
 
 args = vars(parser.parse_args())
 
@@ -113,10 +114,16 @@ def train_model(model, epochs, train_data, val_data):
 			if i[0]>best_acc:
 				best_acc=i[0]
 		ctr=len(losslist)-1
-		if args["cuda"] is False:
-			saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt', map_location=torch.device('cpu'))
+
+		if args["loadbest"]:
+			load_dir = log_dir + f'/best_{args["model"]}_model.pt'
 		else:
-			saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt')
+			load_dir = log_dir + f'/current_{args["model"]}_model.pt'
+		
+		if args["cuda"] is False:
+			saved = torch.load(load_dir, map_location=torch.device('cpu')) 
+		else:
+			saved = torch.load(load_dir)
 		model.load_state_dict(saved['net'])
 	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
 	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=3, verbose=True)
@@ -152,18 +159,32 @@ def train_model(model, epochs, train_data, val_data):
 		v_accuracy = test_model(model, val_data) # not yet revised
 		# v_accuracy2 = test_model(model, val_data, data.val_get2)
 		# v_accuracy3 = test_model(model, val_data, data.val_get3)
+		optimizer.lr = optimizer.lr/2.15 # cube root of 10. lr drops to 1/10 every 3 epoch
 		scheduler.step(v_accuracy)
 		
 		print('previous best validation accuracy ' + str(best_acc))
-		print('Saving best model..')
-		state = {
-	       'net': model.state_dict(),	
-	       'epoch':epoch,
-	    'ctr':ctr,
-	    'best_acc':best_acc
+		print('Saving current model..')
+		state_current = {
+	       	'net': model.state_dict(),	
+	       	'epoch':epoch,
+	    	'ctr':ctr,
+	    	'best_acc':best_acc
 	    }
-		with open(log_dir + '/best_model.pt', 'wb') as f:
-			torch.save(state, f)
+		if v_accuracy > best_acc:
+			print('Saving current model..')
+			state_best = {
+	       	'net': model.state_dict(),	
+	       	'epoch':epoch,
+	    	'ctr':ctr,
+	    	'best_acc':best_acc
+	    }
+
+		with open(log_dir + f'/best_{args["model"]}_model.pt', 'wb') as f:
+			torch.save(state_best, f)
+		with open(log_dir + f'/current_{args["model"]}_model.pt', 'wb') as f:
+			torch.save(state_current, f)
+		
+		#below isn't modified for switching between best/current
 		print('epoch_loss: {}, val accuracy: {}, train_acc: {}, grad_norm: {} '.format(epoch_loss/(iter_ctr), v_accuracy, t_accuracy / 600, norm/iter_ctr))
 		lossstats.append((ctr,epoch_loss/iter_ctr))
 		acc.append((epoch,(v_accuracy)))
@@ -201,10 +222,18 @@ def main():
 	if args['train']:
 		train_model(model, args['epochs'], train_loader, val1_loader)
 	else:
-		saved = torch.load(log_dir + '/best_model.pt')
+		if args["loadbest"]:
+			load_dir = log_dir + f'/best_{args["model"]}_model.pt'
+		else:
+			load_dir = log_dir + f'/current_{args["model"]}_model.pt'
+		
+		if args["cuda"] is False:
+			saved = torch.load(load_dir, map_location=torch.device('cpu')) 
+		else:
+			saved = torch.load(load_dir)
 		model.load_state_dict(saved['net'])
 		v_acc = test_model(model, val1_loader)
-		print('val_acc:'+str(v_acc))
+		print('best val_acc:'+str(v_acc))
 
 if __name__ == "__main__":
 	main()
