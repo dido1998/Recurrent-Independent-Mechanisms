@@ -56,7 +56,7 @@
                 "--cuda",
                 "False",
                 "--epochs",
-                "1",
+                "7",
                 "--batch_size",
                 "64",
                 "--input_size",
@@ -64,7 +64,7 @@
                 "--size",
                 "14",
                 "--loadsaved",
-                "0",
+                "1",
                 "--model",
                 "RIM"
             ]

@@ -36,6 +36,7 @@ parser.add_argument('--num_input_heads', type = int, default = 1)
 parser.add_argument('--num_comm_heads', type = int, default = 4)
 parser.add_argument('--input_dropout', type = float, default = 0.1)
 parser.add_argument('--comm_dropout', type = float, default = 0.1)
+parser.add_argument('train_frac', type= int, default=1, help='fraction of data to train on')
 
 parser.add_argument('--key_size_comm', type = int, default = 32)
 parser.add_argument('--value_size_comm', type = int, default = 100)
@@ -112,7 +113,10 @@ def train_model(model, epochs, train_data, val_data):
 			if i[0]>best_acc:
 				best_acc=i[0]
 		ctr=len(losslist)-1
-		saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt')
+		if args["cuda"] is False:
+			saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt', map_location=torch.device('cpu'))
+		else:
+			saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt')
 		model.load_state_dict(saved['net'])
 	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
 		
