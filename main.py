@@ -119,6 +119,7 @@ def train_model(model, epochs, train_data, val_data):
 			saved = torch.load(log_dir + f'/best_{args["model"]}_model.pt')
 		model.load_state_dict(saved['net'])
 	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=3, verbose=True)
 		
 	for epoch in range(start_epoch,epochs):
 		print('epoch ' + str(epoch + 1))
@@ -151,6 +152,7 @@ def train_model(model, epochs, train_data, val_data):
 		v_accuracy = test_model(model, val_data) # not yet revised
 		# v_accuracy2 = test_model(model, val_data, data.val_get2)
 		# v_accuracy3 = test_model(model, val_data, data.val_get3)
+		scheduler.step(v_accuracy)
 		
 		print('previous best validation accuracy ' + str(best_acc))
 		print('Saving best model..')
