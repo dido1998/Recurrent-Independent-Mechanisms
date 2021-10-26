@@ -159,6 +159,8 @@ def train_model(model, epochs, train_data, val_data):
 		v_accuracy = test_model(model, val_data) # not yet revised
 		# v_accuracy2 = test_model(model, val_data, data.val_get2)
 		# v_accuracy3 = test_model(model, val_data, data.val_get3)
+
+		# need to change this
 		optimizer.defaults["lr"] = optimizer.defaults["lr"]/2.15 # cube root of 10. lr drops to 1/10 every 3 epoch
 		scheduler.step(v_accuracy)
 		
