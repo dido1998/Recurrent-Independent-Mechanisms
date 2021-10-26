@@ -126,7 +126,8 @@ def train_model(model, epochs, train_data, val_data):
 			saved = torch.load(load_dir)
 		model.load_state_dict(saved['net'])
 	optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
-	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=3, verbose=True)
+	scheduler_1 = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+	scheduler_2 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=3, verbose=True)
 		
 	for epoch in range(start_epoch,epochs):
 		print('epoch ' + str(epoch + 1))
@@ -160,9 +161,8 @@ def train_model(model, epochs, train_data, val_data):
 		# v_accuracy2 = test_model(model, val_data, data.val_get2)
 		# v_accuracy3 = test_model(model, val_data, data.val_get3)
 
-		# need to change this
-		optimizer.defaults["lr"] = optimizer.defaults["lr"]/2.15 # cube root of 10. lr drops to 1/10 every 3 epoch
-		scheduler.step(v_accuracy)
+		scheduler_1.step()
+		scheduler_2.step(v_accuracy)
 		
 		print('previous best validation accuracy ' + str(best_acc))
 		print('Saving current model..')
@@ -205,7 +205,7 @@ def main():
 		transform=train_trans)
 	val1_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
 		'mnist/t10k-labels-idx1-ubyte.gz',
-		val1_trans)
+		transform=val1_trans)
 	# val2_set = MnistSet('mnist/t10k-images-idx3-ubyte.gz',
 	# 	'mnist/t10k-labels-idx1-ubyte.gz',
 	# 	val2_trans)
