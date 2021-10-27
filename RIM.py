@@ -346,3 +346,159 @@ class RIM(nn.Module):
 			cs = torch.stack(cs, dim = 0)
 			return x, hs, cs
 		return x, hs
+
+
+# modified part
+class VariationalRIMCell(nn.Module):
+	def __init__(self, 
+		device, input_size, hidden_size, num_units, k, rnn_cell, input_key_size = 64, input_value_size = 400, input_query_size = 64,
+		num_input_heads = 1, input_dropout = 0.1, comm_key_size = 32, comm_value_size = 100, comm_query_size = 32, num_comm_heads = 4, comm_dropout = 0.1
+	):
+		super().__init__()
+		if comm_value_size != hidden_size:
+			#print('INFO: Changing communication value size to match hidden_size')
+			comm_value_size = hidden_size
+		self.device = device
+		self.hidden_size = hidden_size
+		self.num_units =num_units
+		self.rnn_cell = rnn_cell
+		self.key_size = input_key_size
+		self.k = k
+		self.num_input_heads = num_input_heads
+		self.num_comm_heads = num_comm_heads
+		self.input_key_size = input_key_size
+		self.input_query_size = input_query_size
+		self.input_value_size = input_value_size
+
+		self.comm_key_size = comm_key_size
+		self.comm_query_size = comm_query_size
+		self.comm_value_size = comm_value_size
+
+		self.key = nn.Linear(input_size, num_input_heads * input_query_size).to(self.device)
+		self.value = nn.Linear(input_size, num_input_heads * input_value_size).to(self.device)
+
+		if self.rnn_cell == 'GRU':
+			self.rnn = GroupGRUCell(input_value_size, hidden_size, num_units)
+			self.query = GroupLinearLayer(hidden_size,  input_key_size * num_input_heads, self.num_units)
+		else:
+			self.rnn = GroupLSTMCell(input_value_size, hidden_size, num_units)
+			self.query = GroupLinearLayer(hidden_size,  input_key_size * num_input_heads, self.num_units)
+		self.query_ =GroupLinearLayer(hidden_size, comm_query_size * num_comm_heads, self.num_units) 
+		self.key_ = GroupLinearLayer(hidden_size, comm_key_size * num_comm_heads, self.num_units)
+		self.value_ = GroupLinearLayer(hidden_size, comm_value_size * num_comm_heads, self.num_units)
+		self.comm_attention_output = GroupLinearLayer(num_comm_heads * comm_value_size, comm_value_size, self.num_units)
+		self.comm_dropout = nn.Dropout(p =input_dropout)
+		self.input_dropout = nn.Dropout(p =comm_dropout)
+
+
+	def transpose_for_scores(self, x, num_attention_heads, attention_head_size):
+	    new_x_shape = x.size()[:-1] + (num_attention_heads, attention_head_size)
+	    x = x.view(*new_x_shape)
+	    return x.permute(0, 2, 1, 3)
+
+	def input_attention_mask(self, x, h):
+	    """
+	    Input : x (batch_size, 2, input_size) [The null input is appended along the first dimension]
+	    		h (batch_size, num_units, hidden_size)
+	    Output: inputs (list of size num_units with each element of shape (batch_size, input_value_size))
+	    		mask_ binary array of shape (batch_size, num_units) where 1 indicates active and 0 indicates inactive
+		"""
+	    key_layer = self.key(x) # input size 1 or fullsize??
+	    value_layer = self.value(x)
+	    query_layer = self.query(h)
+
+	    key_layer = self.transpose_for_scores(key_layer,  self.num_input_heads, self.input_key_size)
+	    value_layer = torch.mean(self.transpose_for_scores(value_layer,  self.num_input_heads, self.input_value_size), dim = 1)
+	    query_layer = self.transpose_for_scores(query_layer, self.num_input_heads, self.input_query_size)
+
+	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) / math.sqrt(self.input_key_size) 
+	    attention_scores = torch.mean(attention_scores, dim = 1)
+	    mask_ = torch.zeros(x.size(0), self.num_units).to(self.device)
+
+	    not_null_scores = attention_scores[:,:, 0]
+	    topk1 = torch.topk(not_null_scores,self.k,  dim = 1)
+	    row_index = np.arange(x.size(0))
+	    row_index = np.repeat(row_index, self.k)
+
+	    mask_[row_index, topk1.indices.view(-1)] = 1
+	    
+	    attention_probs = self.input_dropout(nn.Softmax(dim = -1)(attention_scores))
+	    inputs = torch.matmul(attention_probs, value_layer) * mask_.unsqueeze(2)
+
+	    return inputs, mask_
+
+	def communication_attention(self, h, mask):
+	    """
+	    Input : h (batch_size, num_units, hidden_size)
+	    	    mask obtained from the input_attention_mask() function
+	    Output: context_layer (batch_size, num_units, hidden_size). New hidden states after communication
+	    """
+	    query_layer = []
+	    key_layer = []
+	    value_layer = []
+	    
+	    query_layer = self.query_(h)
+	    key_layer = self.key_(h)
+	    value_layer = self.value_(h)
+
+	    query_layer = self.transpose_for_scores(query_layer, self.num_comm_heads, self.comm_query_size)
+	    key_layer = self.transpose_for_scores(key_layer, self.num_comm_heads, self.comm_key_size)
+	    value_layer = self.transpose_for_scores(value_layer, self.num_comm_heads, self.comm_value_size)
+	    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+	    attention_scores = attention_scores / math.sqrt(self.comm_key_size)
+	    
+	    attention_probs = nn.Softmax(dim=-1)(attention_scores)
+	    
+	    mask = [mask for _ in range(attention_probs.size(1))]
+	    mask = torch.stack(mask, dim = 1)
+	    
+	    attention_probs = attention_probs * mask.unsqueeze(3)
+	    attention_probs = self.comm_dropout(attention_probs)
+	    context_layer = torch.matmul(attention_probs, value_layer)
+	    context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+	    new_context_layer_shape = context_layer.size()[:-2] + (self.num_comm_heads * self.comm_value_size,)
+	    context_layer = context_layer.view(*new_context_layer_shape)
+	    context_layer = self.comm_attention_output(context_layer)
+	    context_layer = context_layer + h
+	    
+	    return context_layer
+
+	def forward(self, x, hs, cs = None):
+		"""
+		Input : x (batch_size, 1 , input_size)
+				hs (batch_size, num_units, hidden_size)
+				cs (batch_size, num_units, hidden_size)
+		Output: new hs, cs for LSTM
+				new hs for GRU
+		"""
+		size = x.size()
+		null_input = torch.zeros(size[0], 1, size[1]).float().to(self.device)
+		x = torch.cat((x.unsqueeze(1), null_input), dim = 1)
+
+		# Compute input attention
+		inputs, mask = self.input_attention_mask(x, hs)
+		h_old = hs * 1.0
+		if cs is not None:
+			c_old = cs * 1.0
+		
+
+		# Compute RNN(LSTM or GRU) output
+		
+		if cs is not None:
+			hs, cs = self.rnn(inputs, (hs, cs))
+		else:
+			hs = self.rnn(inputs, hs)
+
+		# Block gradient through inactive units
+		mask = mask.unsqueeze(2)
+		h_new = blocked_grad.apply(hs, mask)
+
+		# Compute communication attention
+		h_new = self.communication_attention(h_new, mask.squeeze(2))
+
+		hs = mask * h_new + (1 - mask) * h_old
+		if cs is not None:
+			cs = mask * cs + (1 - mask) * c_old
+			return hs, cs
+
+		return hs, None

@@ -42,8 +42,8 @@ class MnistModel(nn.Module):
 			# Compute Loss
 			y = y.long()
 			probs = nn.Softmax(dim = -1)(preds)
-			entropy = torch.mean(torch.sum(probs*torch.log(probs), dim = 1))
-			loss = self.Loss(preds, y) - entropy
+			entropy = torch.mean(torch.sum(probs*torch.log(probs), dim = 1)) # = -entropy
+			loss = self.Loss(preds, y) - entropy # what? should be + entropy
 			return probs, loss
 		return preds
 
@@ -145,4 +145,24 @@ class CopyingModel(nn.Module):
 			loss_last_10/=10
 			return preds_, loss, loss_last_10
 		return preds_
+
+def sparse_loss(beta, gamma):
+	# NOTE: loss is defined for BATCH. so it should be the average across the whole batch
+	# beta = batch x K
+	# gamma = 1x1
+	if beta.dim() > 2:
+		raise IndexError('expect beta to be (BatchSize, K)')
+	loss_sum = -gamma*torch.sum(beta/(2*gamma*beta-gamma-beta+1)*torch.log(beta/(2*gamma*beta-gamma-beta+1)), dim=1)
+	loss = torch.mean(loss_sum)
+	return loss
+
+def main():
+	gamma = 0.1
+	K = 6
+	beta = torch.rand(10,6)
+	sparse_l = sparse_loss(beta, gamma)
+	print(f'sparse regularization loss is {sparse_l}')
+
+if __name__ == "__main__":
+	main()
 
