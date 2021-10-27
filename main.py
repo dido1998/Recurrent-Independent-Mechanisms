@@ -173,16 +173,16 @@ def train_model(model, epochs, train_data, val_data):
 	    	'best_acc':best_acc
 	    }
 		if v_accuracy > best_acc:
-			print('Saving current model..')
+			print('Saving best model..')
 			state_best = {
 	       	'net': model.state_dict(),	
 	       	'epoch':epoch,
 	    	'ctr':ctr,
 	    	'best_acc':best_acc
-	    }
+	    	}
+			with open(log_dir + f'/best_{args["model"]}_model.pt', 'wb') as f:
+				torch.save(state_best, f)
 
-		with open(log_dir + f'/best_{args["model"]}_model.pt', 'wb') as f:
-			torch.save(state_best, f)
 		with open(log_dir + f'/current_{args["model"]}_model.pt', 'wb') as f:
 			torch.save(state_current, f)
 		

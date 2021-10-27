@@ -14,11 +14,13 @@
                 "--batch_size",
                 "64",
                 "--input_size",
-                "10",
+                "1",
+                "--hidden_size",
+                "600",
                 "--size",
                 "14",
                 "--loadsaved",
-                "1",
+                "0",
                 "--model",
                 "RIM"
             ]

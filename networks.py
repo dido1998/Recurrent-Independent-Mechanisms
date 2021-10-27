@@ -78,8 +78,9 @@ class LSTM(nn.Module):
 		x = x.float()
 		hs = torch.randn(x.size(0), self.hidden_size).to(self.device)
 		cs = torch.randn(x.size(0), self.hidden_size).to(self.device) 
+
 		x = x.reshape((x.shape[0],-1))
-		xs = torch.split(x, 1, 1)
+		xs = torch.split(x, self.args["input_size"], 1)
 		for x in xs:
 			# x_ = torch.squeeze(x, dim = 1)
 			hs, cs = self.lstm(x, (hs, cs))
