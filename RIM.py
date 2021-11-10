@@ -18,6 +18,35 @@ class blocked_grad(torch.autograd.Function):
         x, mask = ctx.saved_tensors
         return grad_output * mask, mask * 0.0
 
+class AlphaFix(torch.autograd.Function):
+    """
+    given: attention_probs, alpha
+    perform: a fix on the probs
+    """
+
+    @staticmethod
+    def forward(ctx, attention_probs, alpha):
+        not_null_probs = attention_probs[:,:,0:-1] * alpha.reshape(1,-1,1)
+        null_probs = 1 - alpha.reshape(1,-1) + alpha.reshape(1,-1) * attention_probs[:,:,-1] 
+
+        out_probs = torch.cat((not_null_probs, null_probs.unsqueeze(2)), 2)
+
+        ctx.save_for_backward(not_null_probs, null_probs, alpha)
+
+        return out_probs
+
+    @staticmethod
+    def backward(ctx, grad_output): # grad_output means the gradient w.r.t. output
+        not_null_probs, null_probs, alpha = ctx.saved_tensors
+
+        grad_alpha = torch.cat((not_null_probs, (-1+null_probs).unsqueeze(2)), 2)
+
+        grad_probs = alpha.reshape(1,-1)
+
+        return grad_output * grad_probs, grad_output * grad_alpha
+
+    
+
 
 class GroupLinearLayer(nn.Module):
 
@@ -631,14 +660,21 @@ class SparseRIMCell2(nn.Module):
 
         mask_att[row_index, topk1.indices.view(-1)] = 1
         
-        attention_probs =nn.Softmax(dim = -1)(attention_scores)
-        not_null_probs = 1 - attention_probs[:,:,-1] * alpha # scale down attention probs
+        attention_probs = nn.Softmax(dim = -1)(attention_scores)
+        not_null_probs = 1 - attention_probs[:,:,-1] 
+        # PERFORM CUSTOM ALPHA FIX FUNCTION 
+        # attention_probs = AlphaFix.apply(attention_probs, alpha)
+        fixed_probs = torch.zeros_like(attention_probs)
+        fixed_probs[:,:,0:-1] = attention_probs[:,:,0:-1] * alpha.reshape(1,-1,1)
+        fixed_probs[:,:,-1] = 1 - not_null_probs * alpha.reshape(1,-1)
+        not_null_probs = 1 - fixed_probs[:,:,-1] 
+
         mask_alpha = torch.ceil(not_null_probs-self.threshold)
 
         mask = mask_att * mask_alpha
 
-        attention_probs = self.input_dropout(attention_probs)
-        inputs = torch.matmul(attention_probs, value_layer) * mask.unsqueeze(2)
+        fixed_probs = self.input_dropout(fixed_probs)
+        inputs = torch.matmul(fixed_probs, value_layer) * mask.unsqueeze(2)
 
         return inputs, mask
 
