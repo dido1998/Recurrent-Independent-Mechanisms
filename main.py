@@ -43,10 +43,14 @@ parser.add_argument('--value_size_comm', type = int, default = 100)
 parser.add_argument('--query_size_comm', type = int, default = 32)
 parser.add_argument('--k', type = int, default = 4)
 
-parser.add_argument('--size', type = int, default = 14)
+parser.add_argument('--size', type = int, default = 14, help='input image size') # image size
 parser.add_argument('--loadsaved', type = int, default = 0)
 parser.add_argument('--log_dir', type = str, default = 'smnist_lstm_600')
 parser.add_argument('--loadbest', type = int, default = 0)
+
+parser.add_argument('--a', type=float, default = 1)
+parser.add_argument('--b', type=float, default = 3)
+parser.add_argument('--threshold', type=float, default = 0.5)
 
 args = vars(parser.parse_args())
 
@@ -136,6 +140,7 @@ def train_model(model, epochs, train_data, val_data):
 		t_accuracy = 0
 		norm = 0
 		model.train()
+		torch.autograd.set_detect_anomaly(True)
 		for imgs, labels in tqdm(train_data):
 			if args["cuda"]:
 				imgs = imgs.to(torch.device('cuda'))

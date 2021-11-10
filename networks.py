@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from RIM import RIMCell
+from RIM import RIMCell, SparseRIMCell, SparseRIMCell2, OmegaLoss
 import numpy as np
 
 class MnistModel(nn.Module):
@@ -12,11 +12,15 @@ class MnistModel(nn.Module):
 			self.device = torch.device('cuda')
 		else:
 			self.device = torch.device('cpu')
-		self.rim_model = RIMCell(self.device, args['input_size'], args['hidden_size'], args['num_units'], args['k'], args['rnn_cell'], args['key_size_input'], args['value_size_input'] , args['query_size_input'],
-			args['num_input_heads'], args['input_dropout'], args['key_size_comm'], args['value_size_comm'], args['query_size_comm'], args['num_input_heads'], args['comm_dropout']).to(self.device)
+		self.rim_model = SparseRIMCell2(self.device, args['input_size'], args['hidden_size'], args['num_units'], args['k'], args['rnn_cell'], args['key_size_input'], args['value_size_input'] , args['query_size_input'],
+			args['num_input_heads'], args['input_dropout'], args['key_size_comm'], args['value_size_comm'], args['query_size_comm'], args['num_input_heads'], args['comm_dropout'],
+			args['a'], args['b'], args['threshold']).to(self.device)
 
 		self.Linear = nn.Linear(args['hidden_size'] * args['num_units'], 10)
 		self.Loss = nn.CrossEntropyLoss()
+		self.eta_0 = torch.tensor(args['a']+args['b']-2, device=self.device)
+		self.nu_0 = torch.tensor(args['b']-1, device=self.device)
+		self.regularizer = OmegaLoss(1, self.eta_0, self.nu_0) # 1 for now
 
 	def to_device(self, x):
 		return torch.from_numpy(x).to(self.device) if type(x) is not torch.Tensor else x.to(self.device)
@@ -35,15 +39,16 @@ class MnistModel(nn.Module):
 
 		# pass through RIMCell for all timesteps
 		for x in xs[:-1]:
-			hs, cs = self.rim_model(x, hs, cs)
+			hs, cs, nu = self.rim_model(x, hs, cs)
 		preds = self.Linear(hs.contiguous().view(x.size(0), -1))
 
 		if y is not None:
 			# Compute Loss
 			y = y.long()
+			eta = self.eta_0 + y.shape[0] # eta_0 + N
 			probs = nn.Softmax(dim = -1)(preds)
 			entropy = torch.mean(torch.sum(probs*torch.log(probs), dim = 1)) # = -entropy
-			loss = self.Loss(preds, y) - entropy # what? should be + entropy
+			loss = self.Loss(preds, y) - entropy + self.regularizer(eta, nu) # what? should be + entropy
 			return probs, loss
 		return preds
 

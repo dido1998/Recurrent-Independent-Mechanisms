@@ -63,10 +63,10 @@
                 "64",
                 "--input_size",
                 "10",
-                "--size",
+                "--size", 
                 "14",
                 "--loadsaved",
-                "1",
+                "0",
                 "--model",
                 "RIM"
             ]
