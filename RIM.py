@@ -617,7 +617,7 @@ class SparseRIMCell2(nn.Module):
 
         self.eta = x.shape[0] + self.eta_0
         alpha = (self.eta-self.nu+1)/(self.eta+2)
-        alpha = alpha.reshape(1,-1,1)
+        alpha = alpha.reshape(1,-1)
 
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) / math.sqrt(self.input_key_size) 
         attention_scores = torch.mean(attention_scores, dim = 1)
@@ -632,7 +632,7 @@ class SparseRIMCell2(nn.Module):
         mask_att[row_index, topk1.indices.view(-1)] = 1
         
         attention_probs =nn.Softmax(dim = -1)(attention_scores)
-        not_null_probs = 1 - attention_probs[:,:,-1]
+        not_null_probs = 1 - attention_probs[:,:,-1] * alpha # scale down attention probs
         mask_alpha = torch.ceil(not_null_probs-self.threshold)
 
         mask = mask_att * mask_alpha
