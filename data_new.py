@@ -33,11 +33,11 @@ class ToVector(torch.nn.Module): # i think it already exists?
         return vec
 
 def read_gz(filename):
-	with gzip.open(filename, 'rb') as f:
-		zero, data_type, dims = struct.unpack('>HBB', f.read(4))
-		shape = tuple(struct.unpack('>I', f.read(4))[0] for d in range(dims))
-		imgs = np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
-		return torch.from_numpy(imgs)
+    with gzip.open(filename, 'rb') as f:
+        zero, data_type, dims = struct.unpack('>HBB', f.read(4))
+        shape = tuple(struct.unpack('>I', f.read(4))[0] for d in range(dims))
+        imgs = np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
+        return torch.from_numpy(imgs)
 
 class MnistSet(Dataset):
     def __init__(self, img_dir, anno_dir, transform=None):
@@ -56,17 +56,17 @@ class MnistSet(Dataset):
         return img, label
 
 train_trans = Compose([
-	Resize((14,14)),
-	ToVector()
+    Resize((14,14)),
+    ToVector()
 ])
 
 def main():
     train_set = MnistSet(img_dir='mnist/train-images-idx3-ubyte.gz',
-		anno_dir='mnist/train-labels-idx1-ubyte.gz',
-		transform=train_trans)
+        anno_dir='mnist/train-labels-idx1-ubyte.gz',
+        transform=train_trans)
     img, label = next(iter(train_set))
     train_loader = DataLoader(train_set, batch_size=64, 
-		shuffle=True, drop_last=False, num_workers=2)
+        shuffle=True, drop_last=False, num_workers=2)
     imgs, labels = next((iter(train_loader)))   
     print(f"imgs batch {imgs.shape[0]}, labels batch {labels.shape[0]}")
 
