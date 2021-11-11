@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from RIM import RIMCell, SparseRIMCell, SparseRIMCell2, OmegaLoss
+from RIM import RIMCell, SparseRIMCell, OmegaLoss
 import numpy as np
 
 class MnistModel(nn.Module):
@@ -12,7 +12,7 @@ class MnistModel(nn.Module):
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')
-        self.rim_model = SparseRIMCell2(self.device, args['input_size'], args['hidden_size'], args['num_units'], args['k'], args['rnn_cell'], args['key_size_input'], args['value_size_input'] , args['query_size_input'],
+        self.rim_model = SparseRIMCell(self.device, args['input_size'], args['hidden_size'], args['num_units'], args['k'], args['rnn_cell'], args['key_size_input'], args['value_size_input'] , args['query_size_input'],
             args['num_input_heads'], args['input_dropout'], args['key_size_comm'], args['value_size_comm'], args['query_size_comm'], args['num_input_heads'], args['comm_dropout'],
             args['a'], args['b'], args['threshold']).to(self.device)
 

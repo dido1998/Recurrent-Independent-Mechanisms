@@ -62,7 +62,7 @@
                 "--batch_size",
                 "64",
                 "--input_size",
-                "10",
+                "14",
                 "--size", 
                 "14",
                 "--loadsaved",

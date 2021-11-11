@@ -1,3 +1,8 @@
+"""
+This file is for sequential MNIST classification task
+"""
+
+
 import torch
 # from data_nocv2 import MnistData
 from data_new import MnistSet, Compose, ToVector
