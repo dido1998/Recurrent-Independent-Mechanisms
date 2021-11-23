@@ -295,9 +295,9 @@ class RIMCell(nn.Module):
         hs = mask * h_new + (1 - mask) * h_old
         if cs is not None:
             cs = mask * cs + (1 - mask) * c_old
-            return hs, cs
+            return hs, cs, None
 
-        return hs, None
+        return hs, None, None
 
 
 class RIM(nn.Module):

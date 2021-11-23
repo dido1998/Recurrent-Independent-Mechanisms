@@ -53,6 +53,7 @@ parser.add_argument('--loadsaved', type = int, default = 0)
 parser.add_argument('--log_dir', type = str, default = 'smnist_lstm_600')
 parser.add_argument('--loadbest', type = int, default = 0)
 
+parser.add_argument('--sparse', type=str2bool, default = False)
 parser.add_argument('--a', type=float, default = 1)
 parser.add_argument('--b', type=float, default = 3)
 parser.add_argument('--threshold', type=float, default = 0.5)
