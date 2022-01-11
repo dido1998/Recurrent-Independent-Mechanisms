@@ -575,3 +575,13 @@ class SparseRIMCell(nn.Module):
             return hs, cs, self.nu
 
         return hs, None, self.nu
+
+
+class LayerNorm(nn.Module):
+    def __init__(self):
+        super(LayerNorm, self).__init__()
+        self.layernorm = nn.functional.layer_norm
+
+    def forward(self, x):
+        x = self.layernorm(x, list(x.size()[1:]))
+        return x
