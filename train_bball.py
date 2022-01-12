@@ -200,6 +200,10 @@ def test(model, test_loader, epoch, transfer_loader, logbook,
 def main():
     """Function to run the experiment"""
     args = argument_parser()
+    args.id = f"SchemaBlocks_{args.hidden_size}_{args.num_units}"+\
+        f"_{args.experiment_name}_{args.lr}_num_inp_heads_{args.num_inp_heads}"+\
+        f"_ver_{args.version}"
+    # name="SchemaBlocks_"$dim1"_"$block1"_"$topk1"_"$something"_"$lr"_inp_heads_"$inp_heads"_templates_"$templates"_enc_"$encoder"_ver_"$version"_com_"$comm"_Sharing"
     print(args)
     logbook = LogBook(config=args)
 
@@ -215,7 +219,7 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    args.directory = './'
+    args.directory = './data' # dataset directory
     train_loader, test_loader, transfer_loader = get_dataloaders(args)
 
     train_batch_idx = 0
@@ -269,9 +273,8 @@ def setup_model(args, logbook):
         #     logbook.write_message_logs(message=f"Loading model from {path_to_load_model}")
         #     _, shape_offset = model.load_state_dict(torch.load(path_to_load_model.strip()),
         #                                          shape_offset)
-        model.load_state_dict(torch.load(f"{args.folder_log}/model/{epoch}"))
+        model.load_state_dict(torch.load(path_to_load_model.strip()))
         # torch.save(model.state_dict(), f"{args.folder_log}/model/{epoch}")
-
 
         # NOTE what's the point?
         # if not args.should_resume:
@@ -291,11 +294,7 @@ def setup_model(args, logbook):
         #             model.init_decoders()
 
 
-    # NOTE why?
-    # else:
-    #     model = BallModel(args)
-
-    model = model.to(args.device)
+    # model = model.to(args.device)
 
     return model
 
