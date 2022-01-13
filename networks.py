@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 import math
-from RIM import RIMCell, SparseRIMCell, OmegaLoss, LayerNorm
+from RIM import RIMCell, SparseRIMCell, OmegaLoss, LayerNorm, Flatten, UnFlatten, Interpolate
 import numpy as np
+
 
 class MnistModel(nn.Module):
     def __init__(self, args):
@@ -179,16 +180,15 @@ class BallModel(nn.Module):
         self.Encoder = self.make_encoder()
         
         self.Decoder = None
-        self.init_decoders()
+        self.make_decoder()
 
         self.rim_model = RIMCell(
                                 device=self.args.device,
                                 input_size=self.input_size, # NOTE What exactly
-                                num_units=self.args.num,
+                                num_units=self.args.num_units,
                                 hidden_size=self.args.hidden_size,
                                 k=self.args.k,
                                 rnn_cell='GRU', # defalt GRU
-                                key_size_input=self.args.key_size_input,
                                 input_key_size=self.args.input_key_size,
                                 input_value_size=self.args.input_value_size,
                                 input_query_size = self.args.input_query_size,

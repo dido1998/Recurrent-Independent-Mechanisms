@@ -21,11 +21,14 @@ def argument_parser():
                         help='ADD')
     parser.add_argument('--epochs', type=int, default=100, metavar='E',
                         help='ADD')
-    parser.add_argument('--num_inp_heads', type=int, default=1, metavar='E', help='num of heads in input attention')
+    parser.add_argument('--num_input_heads', type=int, default=1,
+                        metavar='E', help='num of heads in input attention')
     parser.add_argument('--sequence_length', type=int, default=51, metavar='S',
                         help='ADD')
-    parser.add_argument('--lr', type=float, default=0.0001, metavar='LR', help='ADD')
-    parser.add_argument('--input_dropout', type=float, default=0.5, metavar='dropout', help='dropout')
+    parser.add_argument('--lr', type=float, default=0.0001,
+                        metavar='LR', help='ADD')
+    parser.add_argument('--input_dropout', type=float,
+                        default=0.5, metavar='dropout', help='dropout')
     parser.add_argument('--comm_dropout', type=float, default=0.5)
     parser.add_argument('--kl_coeff', type=float, default=0.0, metavar='KL_coeff',
                         help='KL_coeff')
@@ -34,22 +37,26 @@ def argument_parser():
     parser.add_argument('--num_encoders', type=int, default=1, metavar='num_encoders',
                         help='Number of encoders ')
     parser.add_argument('--k', type=int, default=4, metavar='topk',
-                       help='Number_of_topk_blocks')
+                        help='Number_of_topk_blocks')
     parser.add_argument('--memorytopk', type=int, default=4, metavar='memtopk',
-                       help='Number_of_topk_blocks')
+                        help='Number_of_topk_blocks')
 
     parser.add_argument('--hidden_size', type=int, default=600, metavar='hsize',
                         help='hidden_size')
     parser.add_argument('--n_templates', type=int, default=0, metavar='shared_blocks',
                         help='num_templates')
     #parser.add_argument('--num_modules_read_input', type=int, default=4, metavar='sort of proxy to inp heads')
-    parser.add_argument('--share_inp', type=str2bool, default=False, metavar='share inp rims parameters')
-    parser.add_argument('--share_comm', type=str2bool, default=False, metavar='share comm rims parameters')
+    parser.add_argument('--share_inp', type=str2bool,
+                        default=False, metavar='share inp rims parameters')
+    parser.add_argument('--share_comm', type=str2bool,
+                        default=False, metavar='share comm rims parameters')
 
-
-    parser.add_argument('--do_rel', type=str2bool, default=False, metavar='use relational memory or not?')
-    parser.add_argument('--memory_slots', type=int, default=4, metavar='memory slots for rel memory')
-    parser.add_argument('--memory_mlp', type=int, default=4, metavar='no of memory mlp for rel memory')
+    parser.add_argument('--do_rel', type=str2bool, default=False,
+                        metavar='use relational memory or not?')
+    parser.add_argument('--memory_slots', type=int, default=4,
+                        metavar='memory slots for rel memory')
+    parser.add_argument('--memory_mlp', type=int, default=4,
+                        metavar='no of memory mlp for rel memory')
     #parser.add_argument('--num_memory_heads', type=int, default=4, metavar='memory heads for rel memory')
     #parser.add_argument('--memory_head_size', type=int, default=16, metavar='memory head size for rel memory')
 
@@ -128,8 +135,6 @@ def argument_parser():
     parser.add_argument('--comm_value_size', type=int)
     parser.add_argument('--comm_query_size', type=int)
     parser.add_argument('--num_comm_heads', type=int, default=4)
-    
-
 
 
     args = parser.parse_args()
@@ -138,7 +143,14 @@ def argument_parser():
 
     args.folder_log = f"./logs/{args.id}"
 
-    #if args.num_encoders != 1:
+    # if args.num_encoders != 1:
     #    args.num_encoders = args.num_blocks
 
     return args
+
+def main():
+    args = argument_parser()
+    pass
+
+if __name__ == "__main__":
+    main()

@@ -201,7 +201,7 @@ def main():
     """Function to run the experiment"""
     args = argument_parser()
     args.id = f"SchemaBlocks_{args.hidden_size}_{args.num_units}"+\
-        f"_{args.experiment_name}_{args.lr}_num_inp_heads_{args.num_inp_heads}"+\
+        f"_{args.experiment_name}_{args.lr}_num_inp_heads_{args.num_input_heads}"+\
         f"_ver_{args.version}"
     # name="SchemaBlocks_"$dim1"_"$block1"_"$topk1"_"$something"_"$lr"_inp_heads_"$inp_heads"_templates_"$templates"_enc_"$encoder"_ver_"$version"_com_"$comm"_Sharing"
     print(args)
